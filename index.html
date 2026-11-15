@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Blackjack">
+<meta name="theme-color" content="#141414">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Blackjack Trainer</title>
+<link id="fontcss" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&display=swap">
+<style>
+  :root{--gold:#e9c46a;--wood:#5a3519;--wood2:#3a210f;--ink:#15181b}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:#141414 radial-gradient(ellipse at top,#2b2b2b,#0d0d0d 70%);color:#fff;min-height:100vh}
+  #app{max-width:640px;margin:0 auto;padding:8px 8px 40px}
+
+  .topbar{display:flex;justify-content:space-between;gap:6px;font-size:12px;color:#bbb;padding:2px 6px 8px}
+  .topbar b{display:block;color:#fff;font-size:17px}
+  .topbar .sub{display:block;font-size:11px;color:#999}
+  #startOver{display:block;margin:4px auto 0;background:#ffffff1a;color:#fff;border:1px solid #ffffff33;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700}
+  #startOver.confirm{background:#b3271a;border-color:#b3271a}
+
+  /* ---------- table ---------- */
+  .table{position:relative;border:12px solid var(--wood);border-top-width:10px;
+    border-radius:16px 16px 50% 50% / 16px 16px 20% 20%;
+    background:radial-gradient(ellipse at 50% 25%,#1d8a4a 0%,#0f5f31 55%,#0a4523 100%);
+    box-shadow:0 0 0 3px var(--wood2),inset 0 0 50px #000a,0 10px 24px #000c;
+    padding:0 10px 18px;overflow:hidden}
+  .table::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.18;
+    background-image:radial-gradient(#000 1px,transparent 1px);background-size:3px 3px}
+  .tray{display:flex;gap:3px;justify-content:center;background:var(--wood2);padding:5px 9px 6px;border-radius:0 0 10px 10px;width:max-content;margin:0 auto 6px;box-shadow:0 3px 6px #0008}
+  .tube{width:15px;height:26px;border-radius:3px;background:repeating-linear-gradient(180deg,var(--c) 0 3px,#0004 3px 4px);box-shadow:inset 0 0 3px #0008}
+
+  .dealer-area{display:flex;flex-direction:column;align-items:center;min-height:112px;position:relative;z-index:1}
+  .total{margin-top:5px;background:#000a;border:1px solid #fff3;border-radius:12px;padding:2px 10px;font-weight:700;font-size:14px;min-height:22px}
+  .total:empty{visibility:hidden}
+
+  .print{position:relative;margin:2px -6px 0;z-index:0}
+  .print svg{display:block;width:100%;height:auto}
+  .print text{font-family:Cinzel,Georgia,serif;fill:var(--gold);letter-spacing:1.5px}
+  .arc-big{font-size:17px;font-weight:800}
+  .arc-small{font-size:9.5px;fill:#f2e2b0!important;font-weight:600}
+  .arc-ins{font-size:11px;font-weight:800}
+  #insChip{position:absolute;left:50%;top:80%;transform:translate(-50%,-50%)}
+
+  #spots{display:flex;justify-content:center;gap:10px;flex-wrap:nowrap;position:relative;z-index:1;margin-top:-6px;min-height:200px}
+  .spot{display:flex;flex-direction:column;align-items:center;padding:6px 4px;border-radius:12px;border:2px solid transparent;min-width:90px}
+  .spot.active{border-color:var(--gold);background:#ffffff10;box-shadow:0 0 14px #e9c46a55}
+  .circle{width:82px;height:82px;border-radius:50%;border:2px solid #f2e2b0cc;box-shadow:inset 0 0 0 4px #0f5f31,inset 0 0 0 5px #f2e2b066;display:flex;align-items:center;justify-content:center;position:relative}
+  .betlabel{font-size:12px;font-weight:700;margin:3px 0 6px;color:#f2e2b0;min-height:15px}
+  .hinfo{margin-top:6px;display:flex;gap:6px;align-items:center;font-weight:700;font-size:14px;min-height:22px}
+
+  /* ---------- cards ---------- */
+  .cards{display:flex;justify-content:center;min-height:84px}
+  .card{width:58px;height:84px;border-radius:6px;background:linear-gradient(#fff,#f1f1f1);color:var(--ink);position:relative;flex:0 0 auto;
+    box-shadow:-2px 2px 5px #0007,inset 0 0 0 1px #0002;margin-left:-28px}
+  .dealer-area .card{margin-left:-14px}
+  .card:first-child{margin-left:0!important}
+  .card .tl{position:absolute;top:4px;left:5px;font:700 16px/1 Georgia,serif;text-align:center}
+  .card .tl small{display:block;font-size:13px}
+  .card .mid{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px}
+  .card.red{color:#c31717}
+  .card.back{background:#fff;padding:4px}
+  .card.back::after{content:"";position:absolute;inset:4px;border-radius:4px;background:repeating-linear-gradient(45deg,#ffffff22 0 2px,transparent 2px 7px),repeating-linear-gradient(-45deg,#ffffff22 0 2px,transparent 2px 7px),#9c1c1c;border:2px solid #fff}
+  .card.new{animation:deal .28s ease-out}
+  @keyframes deal{from{transform:translate(40px,-120px) rotate(-12deg);opacity:0}to{transform:none;opacity:1}}
+
+  .badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:800;text-transform:uppercase}
+  .b-win,.b-blackjack{background:#2ecc71;color:#05290f}.b-lose,.b-bust{background:#e74c3c}.b-push{background:#ccc;color:#222}
+
+  /* ---------- chips ---------- */
+  .stack{position:relative;width:46px}
+  .chip{width:46px;height:46px;border-radius:50%;position:absolute;left:0;
+    background:repeating-conic-gradient(var(--c) 0 22.5deg,#fff 22.5deg 33.75deg,var(--c) 33.75deg 45deg);
+    box-shadow:0 2px 2px #0009,inset 0 0 0 1px #0004}
+  .chip::after{content:attr(data-v);position:absolute;inset:8px;border-radius:50%;background:var(--c);border:2px dashed #ffffffaa;
+    display:flex;align-items:center;justify-content:center;font:800 11px/1 Arial,sans-serif;color:var(--t,#fff)}
+
+  .rail{position:relative;z-index:1;margin:14px auto 0;width:92%;background:linear-gradient(#3e2613,#26150a);border-radius:30px;padding:8px 14px 6px;box-shadow:inset 0 2px 4px #0009,0 2px 0 #ffffff18;display:flex;align-items:flex-end;justify-content:center;gap:10px;min-height:58px}
+  .rstack{display:flex;flex-direction:column-reverse;align-items:center}
+  .rchip{width:34px;height:8px;border-radius:50%;margin-top:-4px;background:repeating-linear-gradient(90deg,var(--c) 0 5px,#fff 5px 8px);box-shadow:0 1px 0 #000a}
+  .rlabel{font-size:10px;color:#ccc;margin-top:3px}
+  .railnote{font-size:11px;color:#aaa;text-align:center;margin-top:4px}
+
+  /* ---------- controls ---------- */
+  #msg{min-height:22px;margin:10px 4px 2px;font-weight:600;text-align:center}
+  #fb{min-height:20px;font-size:14px;margin:0 4px 6px;text-align:center}
+  button{font-family:inherit;border:0;cursor:pointer;color:#222;font-weight:800}
+  button:disabled{opacity:.3;cursor:default}
+  .bigrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0}
+  .bigrow button{height:76px;border-radius:14px;font-size:26px;letter-spacing:1px;box-shadow:0 4px 0 #0008}
+  #stand{background:linear-gradient(#e05a4a,#b3271a);color:#fff}
+  #hit{background:linear-gradient(#4cd47a,#1f9a4a);color:#fff}
+  .smallrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0}
+  .smallrow button{height:48px;border-radius:12px;font-size:18px;background:#e9c46a;box-shadow:0 3px 0 #0008}
+  #insRow button{height:64px;font-size:19px;background:#e9c46a}
+  #insRow #insNo{background:#f4f4f4}
+
+  .betbar{display:flex;align-items:center;justify-content:center;gap:12px;margin:6px 0 10px}
+  .chipbtn{background:none;padding:0;position:relative;width:58px;height:58px}
+  .chipbtn .chip{width:58px;height:58px;position:relative}
+  .chipbtn .chip::after{inset:10px;font-size:14px}
+  .betamt{min-width:90px;text-align:center}
+  .betamt small{display:block;color:#aaa;font-size:11px;font-weight:600}
+  .betamt b{font-size:24px}
+  #clearBet{background:#ffffff22;color:#fff;border-radius:10px;padding:10px 12px;font-size:14px}
+  #deal{width:100%;height:68px;border-radius:14px;font-size:26px;letter-spacing:3px;font-family:Cinzel,Georgia,serif;background:linear-gradient(#f6d77e,#d4a63b);box-shadow:0 4px 0 #0008}
+
+  #wrong{background:#a8281c;border-radius:12px;padding:10px;margin:8px 0}
+  #wrong p{margin:0 0 8px;font-weight:700;text-align:center}
+  #wrong .smallrow button{background:#fff}
+  #wrong #anyway{background:#ffffff33;color:#fff}
+
+  details{background:#ffffff0d;border-radius:10px;padding:8px 10px;margin-top:10px}
+  summary{cursor:pointer;font-weight:600}
+  table.remain{border-collapse:collapse;width:100%;margin-top:8px;font-size:13px}
+  .remain th,.remain td{text-align:center;padding:3px 0}
+  .remain td.z{opacity:.25}
+  .red-s{color:#ff8a8a}
+  .small{font-size:13px;opacity:.85;line-height:1.45}
+  input{font-size:17px;width:100px;padding:6px;border-radius:6px;border:0}
+  .setrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+  .setrow button{background:#ffffff22;color:#fff;border-radius:8px;padding:9px 12px;font-size:14px}
+
+  .vs{background:linear-gradient(#1c2a22,#121a15);border:1px solid #e9c46a55;border-radius:12px;padding:10px 12px;margin-top:10px}
+  .vs-title{font-family:Cinzel,Georgia,serif;color:var(--gold);font-weight:800;font-size:15px}
+  .vs-title span{font-family:-apple-system,system-ui,sans-serif;color:#aaa;font-weight:500;font-size:12px;display:block}
+  .vs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+  .vs-grid>div{background:#ffffff0d;border-radius:10px;padding:8px;text-align:center}
+  .vs-grid small{display:block;color:#aaa;font-size:11px;font-weight:700;letter-spacing:1px}
+  .vs-grid b{display:block;font-size:22px}
+  .up{color:#7dffa6}.down{color:#ff9b8f}
+  #vsDiff{font-weight:700;text-align:center;margin-bottom:6px}
+  .vs .small{margin-top:4px}
+  .askbtn{width:100%;margin-top:8px;height:46px;border-radius:12px;background:#ffffff1a;color:#fff;font-size:16px;border:1px solid #ffffff33}
+  #say{margin-top:8px;background:#fff;color:#111;border-radius:12px;padding:7px 12px;font-weight:700;font-size:14px;max-width:90%;text-align:center;position:relative;box-shadow:0 3px 8px #0008}
+  #say::before{content:"";position:absolute;top:-7px;left:50%;margin-left:-7px;border:7px solid transparent;border-top:0;border-bottom-color:#fff}
+  #handRep{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#ffffff12;border-radius:12px;padding:8px 10px;margin:4px 0 8px;font-size:14px}
+  #handRep button{background:#e9c46a;border-radius:10px;padding:10px 14px;font-size:14px;flex:0 0 auto}
+  .sessbtn{width:100%;background:#ffffff14;color:#fff;border:1px solid #e9c46a66;border-radius:10px;padding:10px;font-size:14px;margin:4px 0 2px}
+  #sheet{position:fixed;inset:0;background:#000b;z-index:60;display:flex;align-items:flex-end;justify-content:center}
+  .sheet-in{background:#1b1f1c;width:100%;max-width:640px;max-height:82vh;overflow:auto;border-radius:16px 16px 0 0;padding:14px 14px 30px;position:relative}
+  .sheet-in h3{margin:4px 0 4px;font-family:Cinzel,Georgia,serif;color:var(--gold)}
+  #sheetClose{position:absolute;right:12px;top:12px;background:#ffffff22;color:#fff;border-radius:8px;padding:8px 12px}
+  .rep-sum{font-weight:700;margin-bottom:8px}
+  .rep-h{margin:12px 0 4px;color:#aaa;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+  .rep-row{display:flex;gap:10px;padding:8px;border-radius:8px;margin-bottom:4px;font-size:14px}
+  .rep-row small{color:#bbb}
+  .rep-row.bad{background:#a8281c33}.rep-row.bad b{color:#ff8a7d}
+  .rep-row.good{background:#2ecc7122}.rep-row.good b{color:#7dffa6}
+  body{padding-bottom:178px}
+  #bar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:linear-gradient(#141414ee,#0b0b0bfa);border-top:1px solid #ffffff1f;padding:6px 10px calc(10px + env(safe-area-inset-bottom));backdrop-filter:blur(6px)}
+  #bar>*{max-width:620px;margin-left:auto;margin-right:auto}
+  #bar #msg{min-height:18px;margin:0 auto 6px;font-size:13px;font-weight:600;text-align:center;color:#eee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar-top{display:flex;align-items:center;justify-content:center;gap:10px;height:50px;margin-bottom:8px}
+  .bar-top.three button,#barIns button{flex:1;height:46px;border-radius:12px;font-size:16px;background:#e9c46a;box-shadow:0 3px 0 #0008}
+  .bar-top.three #ask,#barIns button{background:#ffffff1f;color:#fff;border:1px solid #ffffff33;box-shadow:none}
+  #bar .chipbtn,#bar .chipbtn .chip{width:48px;height:48px}
+  #bar .chipbtn .chip::after{inset:8px;font-size:12px}
+  #bar .betamt b{font-size:20px}
+  #bar .bigrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 auto}
+  #bar .bigrow button{height:70px;border-radius:14px;font-size:24px;letter-spacing:1px;box-shadow:0 4px 0 #0008}
+  .b-stand{background:linear-gradient(#e05a4a,#b3271a)!important;color:#fff!important}
+  .b-hit{background:linear-gradient(#4cd47a,#1f9a4a)!important;color:#fff!important}
+  .b-deal{background:linear-gradient(#f6d77e,#d4a63b)!important;font-family:Cinzel,Georgia,serif;letter-spacing:2px!important}
+  .b-gold{background:#e9c46a!important;font-size:19px!important}
+  .b-plain{background:#ffffff22!important;color:#fff!important;font-size:17px!important}
+  .table{padding-bottom:12px}
+  .tray{padding:3px 8px 4px;margin-bottom:4px}.tube{height:18px}
+  .dealer-area{min-height:104px}
+  .print{margin-top:-4px}
+  #spots{min-height:0;margin-top:-10px}
+  .betlabel{margin:2px 0 4px}
+  .rail{margin-top:8px;min-height:44px;padding:6px 12px 4px}
+  #cutBanner{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);z-index:5;background:linear-gradient(#f6d77e,#d4a63b);color:#2a1a05;
+    font-family:Cinzel,Georgia,serif;font-weight:800;text-align:center;padding:12px 18px;border-radius:12px;box-shadow:0 6px 18px #000c;width:82%;font-size:17px;line-height:1.3;animation:pop .35s ease-out}
+  #cutBanner small{display:block;font-family:-apple-system,system-ui,sans-serif;font-weight:700;font-size:13px;margin-top:3px}
+  #cutBanner.shuf{background:#111d;color:#fff;border:1px solid #e9c46a}
+  @keyframes pop{from{transform:translate(-50%,-50%) scale(.7);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+  .rep-hand{border-radius:10px;padding:8px 10px;margin-bottom:6px}
+  .rep-hand.bad{background:#a8281c33;border-left:4px solid #ff8a7d}
+  .rep-hand.good{background:#2ecc711a;border-left:4px solid #7dffa6}
+  .rep-hh{display:flex;justify-content:space-between;gap:8px;font-weight:800;font-size:14px;margin-bottom:4px}
+  .rep-line{display:flex;gap:8px;font-size:14px;padding:2px 0;color:#ddd}
+  .rep-line.ok b{color:#7dffa6}.rep-line.no b{color:#ff8a7d}.rep-line.no span{color:#fff;font-weight:600}
+  .tag{font-style:normal;display:inline-block;background:#e9c46a;color:#2a1a05;font-size:10px;font-weight:800;letter-spacing:.5px;padding:1px 6px;border-radius:6px;margin-right:6px;vertical-align:1px}
+  .tag.sub{background:#ffffff26;color:#fff}
+  .rep-line.split{padding:4px 0}
+
+  /* ---- compact layout so the table fits above the buttons ---- */
+  .topbar{align-items:center;padding:0 4px 6px;font-size:11px}
+  .topbar b{font-size:16px}
+  .topbar .mid{text-align:center;font-size:12px}
+  .topbar .inl{display:inline;font-size:16px;margin-left:2px}
+  #startOver{margin:3px auto 0;padding:3px 8px;font-size:11px}
+  .topbar .sub{font-size:10px}
+  .table{border-width:9px;border-top-width:8px;padding:0 8px 8px}
+  .tray{padding:2px 6px 3px;margin-bottom:6px}.tube{width:12px;height:11px}
+  .dealer-area{min-height:0}
+  .cardrow{display:flex;align-items:center;justify-content:center;gap:8px;min-height:73px}
+  .cardrow .total,.hinfo .total{margin:0}
+  .dealer-area #say{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:4px;z-index:6;width:max-content;max-width:92%}
+  .dealer-area{position:relative}
+  .print{margin:4px -4px 0}
+  .arc-big{font-size:15px}.arc-small{font-size:8.5px}.arc-ins{font-size:9.5px}
+  #insChip{top:82%}
+  #spots{margin-top:-2px;gap:6px}
+  .spot{padding:2px 2px 4px;min-width:0}
+  .circle{width:58px;height:58px}
+  .circle .stack{transform:scale(.82);transform-origin:center}
+  .betlabel{font-size:11px;margin:1px 0 4px;min-height:13px}
+  .hinfo{margin:0;flex-direction:column;gap:4px;min-height:0}
+  .cards{min-height:73px}
+  .card{width:50px;height:73px;margin-left:-24px}.card .mid{font-size:25px}.card .tl{font-size:14px}
+  .dealer-area .card{margin-left:-12px}
+  .rail{margin-top:6px;min-height:30px;padding:4px 10px 3px;gap:8px}
+  .rchip{width:26px;height:6px;margin-top:-3px}.rlabel{font-size:9px}
+  #bar{padding-top:4px}
+  #bar #msg{min-height:16px;margin-bottom:4px;font-size:12px}
+  .bar-top{height:44px;margin-bottom:6px}
+  .bar-top.three button,#barIns button{height:42px;font-size:15px}
+  #bar .chipbtn,#bar .chipbtn .chip{width:42px;height:42px}
+  #bar .bigrow button{height:60px;font-size:22px}
+  body{padding-bottom:150px}
+  .tog{display:flex;justify-content:space-between;align-items:center;padding:10px 2px;border-bottom:1px solid #ffffff14;font-size:15px;cursor:pointer}
+  .tog input{display:none}
+  .tog i{width:46px;height:28px;border-radius:14px;background:#555;position:relative;transition:.2s}
+  .tog i::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s}
+  .tog input:checked+i{background:#2ecc71}
+  .tog input:checked+i::after{left:21px}
+  .mc{display:inline-block;background:#fff;color:#111;border-radius:4px;padding:1px 4px;margin-right:3px;font:700 12px/1.3 Georgia,serif;box-shadow:0 1px 2px #0008}
+  .mc.r{color:#c31717}
+  .rep-cards{margin:2px 0 3px}
+  .rep-line .mc,.rep-final .mc{color:#111!important;font-weight:700!important}
+  .rep-line .mc.r,.rep-final .mc.r{color:#c31717!important}
+  .rep-cards .vsx,.rep-final .vsx{color:#aaa;font-size:12px;margin:0 5px 0 2px}
+  .rep-line.no .rep-cards .mc{font-size:14px;padding:2px 5px}
+  .rep-final{margin-top:6px;padding-top:6px;border-top:1px solid #ffffff1a;font-size:12px;color:#ccc;line-height:1.9}
+  .rep-final b{color:#fff;margin-right:4px}
+  .shoe-div{display:flex;align-items:center;gap:8px;margin:12px 0 8px;color:#e9c46a;font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}
+  .shoe-div::before,.shoe-div::after{content:"";flex:1;height:3px;background:#e9c46a;border-radius:2px}
+  .shoe-div span{white-space:nowrap}
+  .topbtns{display:flex;gap:6px;justify-content:center;margin-top:3px}
+  .topbtns button{margin:0!important;background:#ffffff1a;color:#fff;border:1px solid #ffffff33;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:700}
+  #startOver.confirm{background:#b3271a!important;border-color:#b3271a!important}
+  table.chart{border-collapse:separate;border-spacing:2px;width:100%;font-size:12px;table-layout:fixed}
+  .chart th{color:#bbb;font-weight:700;padding:2px 0;font-size:11px}
+  .chart tr th:first-child{width:38px;text-align:right;padding-right:4px;color:#fff}
+  .chart td{text-align:center;font-weight:800;padding:5px 0;border-radius:4px;color:#111}
+  .cc-H{background:#f2f2f2}.cc-S{background:#f4d35e}.cc-D{background:#5fd38d}.cc-Ds{background:#3fb9b0}.cc-P{background:#7aa7ff}
+  .chart td.cur{outline:3px solid #ff4d3d;outline-offset:-1px;box-shadow:0 0 10px #ff4d3d}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;margin:8px 0 2px;align-items:center}
+  .legend span{display:inline-block;min-width:22px;text-align:center;border-radius:4px;color:#111;font-weight:800;padding:1px 4px;margin-right:3px}
+  .undobtn{background:#ffffff1f!important;color:#fff!important;border:1px solid #ffffff33!important;box-shadow:none!important}
+  #undo2{border-radius:10px;padding:10px 10px;font-size:14px;font-weight:800}
+  .bar-top.three button{font-size:14px;padding:0 4px}
+  #cutBanner{pointer-events:auto}
+  #deckRepBtn{display:block;margin:10px auto 0;background:#1b1f1c;color:#e9c46a;border:1px solid #1b1f1c;border-radius:10px;padding:10px 14px;font-size:15px;font-family:-apple-system,system-ui,sans-serif;font-weight:800}
+  .rep-count{font-size:12px;color:#e9c46a;margin:0 0 4px}
+  .rep-count b{color:#fff}.rep-count span{color:#999}
+  .rep-count.hidden{color:#888;font-style:italic}
+  .topbtns button{padding:3px 6px!important}
+  .simform{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin:10px 0}
+  .simform label{display:flex;flex-direction:column;font-size:12px;color:#bbb;gap:4px}
+  .simform label:last-child{grid-column:auto}
+  .simform input,.simform select{font-size:17px;padding:8px;border-radius:8px;border:0;width:100%;background:#fff;color:#111}
+  .simrun{width:100%;height:50px;border-radius:12px;background:linear-gradient(#f6d77e,#d4a63b);font-size:18px;margin-bottom:10px}
+  .simprog{height:10px;background:#ffffff1a;border-radius:5px;overflow:hidden;margin:8px 0 4px}
+  .simprog div{height:100%;background:#e9c46a}
+  .simsum{background:#ffffff0f;border-radius:10px;padding:10px;font-size:14px;line-height:1.45;margin-bottom:8px}
+  .simleg{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;color:#ccc;align-items:center;margin-bottom:6px}
+  .simleg span{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:-6px}
+  .k0{background:#e74c3c}.k1{background:#f0a35e}.k2{background:#999}.k3{background:#7fd88f}.k4{background:#2ecc71}
+  table.simtab{width:100%;border-collapse:collapse;font-size:12px}
+  .simtab th{font-size:10px;color:#aaa;font-weight:700;padding:2px;text-align:center}
+  .simtab td{text-align:center;padding:4px 1px 1px}
+  .simtab td.c0{color:#ff8a7d}.simtab td.c4{color:#7dffa6}
+  .simtab tr.barrow td{padding:0 0 5px}
+  .sbar{display:flex;height:6px;border-radius:3px;overflow:hidden;background:#333}
+  .sbar i{display:block;height:100%}
+  .tabs{display:flex;gap:4px;background:#ffffff12;border-radius:10px;padding:3px;margin:4px 0 10px}
+  .tabs button{flex:1;background:none;color:#ccc;border-radius:8px;padding:8px 4px;font-size:14px}
+  .tabs button.on{background:#e9c46a;color:#222}
+  .chart.edit td{cursor:pointer;position:relative}
+  .chart td.chg::after{content:"";position:absolute;top:0;right:0;border:6px solid transparent;border-top-color:#e8392b;border-right-color:#e8392b;border-radius:0 4px 0 0}
+  .row2{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+  .simtab.cmp td{padding:4px 1px;border-bottom:1px solid #ffffff10}
+  .vb{color:#9a9a9a;font-size:11px}.vm{color:#e9c46a;font-weight:800}
+  .vm.up{color:#7dffa6}.vm.down{color:#ff8a7d}
+  .sw-b{background:#9a9a9a}.sw-m{background:#e9c46a}
+  #flash{position:fixed;inset:0;pointer-events:none;opacity:0;z-index:50}
+  #flash.good{background:#27e05c;animation:fl .75s ease-out}
+  #flash.bad{background:#ff2a1a;animation:fl 1s ease-out}
+  @keyframes fl{0%{opacity:.6}100%{opacity:0}}
+  [hidden]{display:none!important}
+
+  @media (max-width:420px){
+    .card{width:50px;height:73px;margin-left:-24px}.card .mid{font-size:25px}.card .tl{font-size:14px}
+    .circle{width:70px;height:70px}.spot{min-width:76px}
+  }
+  #gestPad{grid-column:1/3;height:60px;border-radius:14px;border:2px dashed #ffffff40;background:#ffffff0d;display:flex;align-items:center;justify-content:space-around;color:#ddd;font-size:16px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+  #gestPad[hidden]{display:none!important}
+  #gestPad b{color:#fff;font-size:18px;letter-spacing:1px}
+  #gestPad .gdiv{width:1px;height:30px;background:#ffffff33}
+  #gestPad.off{opacity:.35}
+  .table{touch-action:pan-y;-webkit-user-select:none;user-select:none}
+  #bar{position:fixed}
+  #gflash{position:absolute;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translateX(-50%);pointer-events:none;opacity:0;z-index:2;
+    font-weight:800;font-size:14px;letter-spacing:2px;padding:5px 14px;border-radius:10px;color:#fff;white-space:nowrap}
+  #gflash.show{animation:gf .38s ease-out}
+  #gflash.hi{background:#1f9a4a}#gflash.st{background:#b3271a}#gflash.db{background:#c9952b}#gflash.dl{background:#555}#gflash.sp{background:#2f6fd6}
+  @keyframes gf{0%{opacity:0}20%{opacity:1}65%{opacity:1}100%{opacity:0}}
+  #gestPad{font-size:12px!important;padding:0 4px}#gestPad span{text-align:center;line-height:1.2}#gestPad b{font-size:13px!important;display:block}
+  #spots.multi .cardrow{flex-direction:column;gap:4px;min-height:0}
+  #spots.multi .hinfo{flex-direction:row;gap:4px}
+  #spots.multi .card{width:44px;height:64px;margin-left:-26px}
+  #spots.multi .card .mid{font-size:21px}
+  #spots.multi .circle{width:50px;height:50px}
+  #spots.multi .badge{font-size:10px;padding:2px 6px}
+  /* ---- big felt: fill the space between the top bar and the controls ---- */
+  .table{display:flex;flex-direction:column;min-height:var(--tableH,0px)}
+  .table .dealer-area{margin-top:6px}
+  .table .print{margin-top:auto;margin-bottom:auto;padding:6px 0}
+  #spots{margin-bottom:auto}
+  .table .rail{margin-top:10px}
+  .card{width:62px;height:90px;margin-left:-28px}.card .mid{font-size:31px}.card .tl{font-size:17px}
+  .cardrow,.cards{min-height:90px}
+  .dealer-area .cards{max-width:250px}
+  .dealer-area .card{margin-left:-20px}
+  .circle{width:64px;height:64px}
+  .circle .stack{transform:scale(.9)}
+  #gestPad{height:50px!important}
+  .bar-top{height:40px;margin-bottom:6px}
+  .bar-top.three button,#barIns button{height:40px}
+  #bar .bigrow button{height:56px}
+  #bar #msg{margin-bottom:3px}
+  #spots{justify-content:space-around}
+  .spot.bet .circle.empty{border-style:dashed;border-color:#f2e2b066;box-shadow:none}
+  .spot.bet .plus{font-size:26px;color:#f2e2b088;font-weight:300}
+  .spot.bet.sel .circle{box-shadow:0 0 0 3px #e9c46a,0 0 14px #e9c46a88}
+  .circle[data-spot]{cursor:pointer;touch-action:pan-y}
+  .spot.bet .betlabel{min-height:15px}
+  #undo2{white-space:nowrap;padding:10px 8px!important}
+  #bar .betamt{min-width:96px;white-space:nowrap}
+  #bar .betamt small{font-size:10px}
+  .rulegrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin:10px 0}
+  .rulegrid label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#bbb}
+  .rulegrid select{font-size:15px;padding:8px;border-radius:8px;border:0;background:#fff;color:#111;width:100%}
+  #rulesApply,#rulesReset{width:100%}
+  #rulesApply{background:#e9c46a!important;color:#222!important}
+  #rulesApply.confirm,#rulesReset.confirm{background:#b3271a!important;color:#fff!important}
+  .cc-R{background:#d9a7f0}.cc-Rs{background:#c08ad8}.cc-Rp{background:#a99af5}
+  .b-surrender{background:#888;color:#fff}
+  .sheet-in .tabs:first-child{margin-right:78px}
+  #app{padding-top:calc(8px + env(safe-area-inset-top))}
+  html,body{overscroll-behavior:none}
+</style>
+</head>
+<body>
+<div id="sheet" hidden><div class="sheet-in"><button id="sheetClose">Close</button><div id="sheetBody"></div></div></div>
+<div id="app">
+  <div class="topbar">
+    <div>Bankroll<b id="bank">$200</b></div>
+    <div class="mid">Hand <b id="handNo" class="inl">0</b><span class="topbtns"><button id="startOver">↺ Start over</button><button id="chartBtn">▦ Chart</button><button id="simBtn">📈 Sim</button></span></div>
+    <div style="text-align:right">Until shuffle<b id="untilShuf">—</b><span id="left" class="sub"></span></div>
+  </div>
+
+  <div class="table">
+    <div class="tray" id="tray"></div>
+
+    <div class="dealer-area">
+      <div class="cardrow"><div id="dealer" class="cards"></div><div id="dtot" class="total"></div></div>
+      <div id="say" hidden></div>
+    </div>
+
+    <div class="print">
+      <svg viewBox="0 0 400 88" aria-hidden="true">
+        <defs>
+          <path id="a1" d="M 30 6 Q 200 56 370 6"/>
+          <path id="a2" d="M 62 24 Q 200 70 338 24"/>
+          <path id="a3" d="M 26 40 Q 200 106 374 40"/>
+        </defs>
+        <text class="arc-big"><textPath id="printBJ" href="#a1" startOffset="50%" text-anchor="middle">BLACKJACK PAYS 3 TO 2</textPath></text>
+        <text class="arc-small"><textPath id="printS17" href="#a2" startOffset="50%" text-anchor="middle">DEALER MUST HIT SOFT 17</textPath></text>
+        <use href="#a3" fill="none" stroke="#e9c46a" stroke-width="19" opacity=".9"/>
+        <use href="#a3" fill="none" stroke="#0f5f31" stroke-width="16.5"/>
+        <text class="arc-ins" dy="3.5"><textPath href="#a3" startOffset="50%" text-anchor="middle">INSURANCE PAYS 2 TO 1</textPath></text>
+      </svg>
+      <div id="insChip"></div>
+    </div>
+
+    <div id="spots"></div>
+    <div id="cutBanner" hidden></div>
+
+    <div class="rail" id="rail"></div>
+  </div>
+
+  <div id="bar">
+    <div id="msg"></div>
+    <div id="barBet" class="bar-top">
+      <button class="chipbtn" id="add25"><div class="chip" style="--c:#1e8e3e" data-v="25"></div></button>
+      <button class="chipbtn" id="add100"><div class="chip" style="--c:#151515" data-v="100"></div></button>
+      <div class="betamt"><small id="betLbl">YOUR BET</small><b id="betAmt">$25</b></div>
+      <button id="clearBet">Clear</button>
+      <button id="undo2" class="undobtn">↶ Undo</button>
+    </div>
+    <div id="barPlay" class="bar-top three" hidden>
+      <button id="undo1" class="undobtn">↶ Undo</button><button id="dbl">Double</button><button id="split">Split</button><button id="sur" hidden>Surrender</button><button id="ask">Ask dealer</button>
+    </div>
+    <div id="barIns" class="bar-top" hidden>
+      <button id="askIns">Ask the dealer</button>
+    </div>
+    <div class="bigrow">
+      <button id="leftBtn">STAY</button>
+      <button id="right">HIT</button>
+      <div id="gestPad" hidden><span><b>TAP</b> hit</span><span class="gdiv"></span><span><b>2× TAP</b> double</span><span class="gdiv"></span><span><b>SWIPE</b> stay</span><span class="gdiv"></span><span><b>SPREAD</b> split</span></div>
+    </div>
+    <div id="gflash"></div>
+  </div>
+
+  <div class="vs">
+    <div class="vs-title">You vs the Book<span id="vsSub"></span></div>
+    <div class="vs-grid">
+      <div><small>YOU</small><b id="vsMe"></b><span id="vsMeNet"></span></div>
+      <div><small>THE BOOK</small><b id="vsBook"></b><span id="vsBookNet"></span></div>
+    </div>
+    <div id="vsDiff"></div>
+    <button id="sessRep" class="sessbtn">Session report: what I did right &amp; wrong</button>
+    <div class="small" id="vsCards"></div>
+    <div class="small" id="vsLast"></div>
+    <div class="small" id="vsTime"></div>
+  </div>
+
+  <details>
+    <summary>Cards still in play: <span id="leftSummary"></span></summary>
+    <div class="small" id="tensAces"></div>
+    <table class="remain" id="remain"></table>
+    <div class="small" style="margin-top:6px">Counts every card you haven't seen since the last shuffle (still in the deck, the burn card, or the dealer's face-down card).</div>
+  </details>
+
+  <details>
+    <summary>Settings &amp; hints</summary>
+    <label class="tog"><span>Show my hand total</span><input type="checkbox" id="optMine"><i></i></label>
+    <label class="tog"><span>Show dealer's total</span><input type="checkbox" id="optDealer"><i></i></label>
+    <label class="tog"><span>Tap to hit, swipe to stay</span><input type="checkbox" id="optGest"><i></i></label>
+    <div class="setrow">
+      <span>Starting bankroll $</span><input id="startBank" type="number" min="25" step="25" value="200">
+    </div>
+    <div class="setrow">
+      <span>Book's flat bet $</span><input id="bookBetIn" type="number" min="25" step="25" value="25">
+    </div>
+    <div class="setrow"><button id="resetBank">Start new session</button></div>
+    <div class="small">A new session resets your bankroll and the Book's to the starting amount, with a fresh shuffle you both share.</div>
+    <div class="setrow"><button id="resetScore">Clear decision history</button></div>
+  </details>
+
+  <details>
+    <summary>Table rules</summary>
+    <div class="small" id="rulesSummary"></div>
+    <div class="rulegrid">
+      <label>Decks<select id="rDecks"><option value="1">1 deck</option><option value="2" selected>2 decks</option><option value="4">4 decks</option><option value="6">6 decks</option><option value="8">8 decks</option></select></label>
+      <label>Dealer on soft 17<select id="rH17"><option value="1" selected>Hits</option><option value="0">Stays</option></select></label>
+      <label>Blackjack pays<select id="rBJ"><option value="1.5" selected>3 to 2</option><option value="1.2">6 to 5</option></select></label>
+      <label>Double down on<select id="rDbl"><option value="any" selected>Any first two cards</option><option value="9-11">9, 10 or 11 only</option><option value="10-11">10 or 11 only</option></select></label>
+      <label>Double after split<select id="rDAS"><option value="1" selected>Allowed</option><option value="0">Not allowed</option></select></label>
+      <label>Surrender<select id="rSur"><option value="0" selected>Not allowed</option><option value="1">Late surrender</option></select></label>
+      <label>Splitting aces<select id="rRSA"><option value="0">No re-split</option><option value="1" selected>Re-split once</option><option value="2">Re-split to 4</option></select></label>
+      <label>Split aces get<select id="rHSA"><option value="0" selected>One card each</option><option value="1">Can be hit</option></select></label>
+      <label>Most hands from splits<select id="rMax"><option value="2">2 hands</option><option value="3">3 hands</option><option value="4" selected>4 hands</option></select></label>
+      <label>Deck penetration<select id="rPen"><option value="0.5">50% dealt</option><option value="0.55">55% dealt</option><option value="0.6">60% dealt</option><option value="0.65">65% dealt</option><option value="0.7" selected>70% dealt</option><option value="0.75">75% dealt</option><option value="0.8">80% dealt</option><option value="0.85">85% dealt</option></select></label>
+    </div>
+    <div class="setrow"><button id="rulesApply">Apply rules (starts a new session)</button></div>
+    <div class="setrow"><button id="rulesReset">Back to the default rules</button></div>
+    <div class="small">
+      <b>Strategy follows the rules:</b> the book, Ask the dealer, the chart, the Book comparison and the simulator all use the correct basic strategy for these rules.<br><br>
+      <b>Shuffle:</b> the full deck order is set once per shuffle and dealt from the top in exactly that order. You and the Book always get the same new deck at each shuffle. On a reshuffle, the discards and undealt cards are gathered and hand-shuffled: riffle, riffle, strip, riffle, cut, burn one. The first shuffle starts with a wash (new decks scrambled on the felt).<br><br>
+      <b>Always:</b> insurance pays 2 to 1, and the dealer checks for blackjack under an ace or ten before you play.
+    </div>
+  </details>
+</div>
+<script id="logic">
+// ===================== GAME LOGIC (no DOM) =====================
+const SUITS=['♠','♥','♦','♣'];
+const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const MIN_BET=25;
+const DEFAULT_RULES={decks:2,h17:true,bj:1.5,dbl:'any',das:true,sur:false,rsa:1,hsa:false,maxHands:4,pen:0.70};
+let RULES={...DEFAULT_RULES}, DECKS=2, TOTAL=104, PENETRATION=0.70;
+function applyRules(r){RULES={...DEFAULT_RULES,...(r||{})};DECKS=RULES.decks;TOTAL=52*DECKS;PENETRATION=RULES.pen;}
+// Basic strategy for every deck count and soft-17 rule: each cell lists the actions best-first
+// (S stay, H hit, D double, R surrender, P split). Computed with card removal and the dealer peeking for blackjack.
+const STRAT={"1H":{"hard":{"5:2":"HSRD","6:2":"HSRD","7:2":"HSDR","8:2":"HDSR","9:2":"DHSR","10:2":"DHSR","11:2":"DHSR","12:2":"HSRD","13:2":"SHRD","14:2":"SHRD","15:2":"SHRD","16:2":"SHRD","17:2":"SRHD","5:3":"HSDR","6:3":"HSDR","7:3":"HSDR","8:3":"HDSR","9:3":"DHSR","10:3":"DHSR","11:3":"DHSR","12:3":"HSDR","13:3":"SHRD","14:3":"SHRD","15:3":"SHRD","16:3":"SHRD","17:3":"SRHD","5:4":"HSDR","6:4":"HSDR","7:4":"HSDR","8:4":"HDSR","9:4":"DHSR","10:4":"DHSR","11:4":"DHSR","12:4":"SHDR","13:4":"SHRD","14:4":"SHRD","15:4":"SHRD","16:4":"SHRD","17:4":"SRHD","5:5":"HSDR","6:5":"HSDR","7:5":"HDSR","8:5":"DHSR","9:5":"DHSR","10:5":"DHSR","11:5":"DHSR","12:5":"SHDR","13:5":"SHDR","14:5":"SHRD","15:5":"SHRD","16:5":"SHRD","17:5":"SHRD","5:6":"HSDR","6:6":"HSDR","7:6":"HDSR","8:6":"DHSR","9:6":"DHSR","10:6":"DHSR","11:6":"DHSR","12:6":"SHDR","13:6":"SHDR","14:6":"SHRD","15:6":"SHRD","16:6":"SHRD","17:6":"SHRD","5:7":"HSRD","6:7":"HSRD","7:7":"HSRD","8:7":"HDSR","9:7":"HDSR","10:7":"DHSR","11:7":"DHSR","12:7":"HSRD","13:7":"HSRD","14:7":"HSRD","15:7":"HSRD","16:7":"HSRD","17:7":"SHRD","5:8":"HRSD","6:8":"HRSD","7:8":"HRSD","8:8":"HDRS","9:8":"HDRS","10:8":"DHRS","11:8":"DHRS","12:8":"HRSD","13:8":"HRSD","14:8":"HRSD","15:8":"HRSD","16:8":"HRSD","17:8":"SHRD","5:9":"HRSD","6:9":"HRSD","7:9":"HRSD","8:9":"HRSD","9:9":"HDRS","10:9":"DHRS","11:9":"DHRS","12:9":"HRSD","13:9":"HRSD","14:9":"HRSD","15:9":"HRSD","16:9":"HRSD","17:9":"SRHD","5:10":"HRSD","6:10":"HRSD","7:10":"HRSD","8:10":"HRSD","9:10":"HDRS","10:10":"HDRS","11:10":"DHRS","12:10":"HRSD","13:10":"HRSD","14:10":"HRSD","15:10":"HRSD","16:10":"RHSD","17:10":"SRHD","5:11":"HRSD","6:11":"HRSD","7:11":"HRSD","8:11":"HRSD","9:11":"HDRS","10:11":"HDRS","11:11":"DHRS","12:11":"HRSD","13:11":"HRSD","14:11":"HRSD","15:11":"RHSD","16:11":"RHSD","17:11":"RSHD"},"soft":{"13:2":"HDSR","14:2":"HDSR","15:2":"HDSR","16:2":"HDSR","17:2":"DHSR","18:2":"SDHR","19:2":"SDHR","20:2":"SDHR","13:3":"HDSR","14:3":"HDSR","15:3":"HDSR","16:3":"HDSR","17:3":"DHSR","18:3":"DSHR","19:3":"SDHR","20:3":"SDHR","13:4":"DHSR","14:4":"DHSR","15:4":"DHSR","16:4":"DHSR","17:4":"DHSR","18:4":"DSHR","19:4":"SDHR","20:4":"SDHR","13:5":"DHSR","14:5":"DHSR","15:5":"DHSR","16:5":"DHSR","17:5":"DHSR","18:5":"DSHR","19:5":"SDHR","20:5":"SDHR","13:6":"DHSR","14:6":"DHSR","15:6":"DHSR","16:6":"DHSR","17:6":"DHSR","18:6":"DSHR","19:6":"DSHR","20:6":"SDHR","13:7":"HDSR","14:7":"HDSR","15:7":"HDSR","16:7":"HDSR","17:7":"HDSR","18:7":"SDHR","19:7":"SDHR","20:7":"SDHR","13:8":"HDRS","14:8":"HDRS","15:8":"HDRS","16:8":"HDRS","17:8":"HDSR","18:8":"SHDR","19:8":"SDHR","20:8":"SDHR","13:9":"HDRS","14:9":"HDRS","15:9":"HDRS","16:9":"HDRS","17:9":"HDSR","18:9":"HSDR","19:9":"SHDR","20:9":"SDHR","13:10":"HDRS","14:10":"HDRS","15:10":"HDRS","16:10":"HRDS","17:10":"HSDR","18:10":"HSDR","19:10":"SHDR","20:10":"SHDR","13:11":"HRDS","14:11":"HRDS","15:11":"HRDS","16:11":"HRSD","17:11":"HRSD","18:11":"HSDR","19:11":"SHDR","20:11":"SHDR"},"pairD":{"11:2":"PHDSR","2:2":"PHSRD","3:2":"PHSRD","4:2":"HPDSR","5:2":"DHPSR","6:2":"PHSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"PHSDR","3:3":"PHSDR","4:3":"HPDSR","5:3":"DHPSR","6:3":"PSHDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"PHDSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PDHSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"PDHSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"PDHSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HDPSR","5:7":"DHPSR","6:7":"PHSRD","7:7":"PHRSD","8:7":"PHRSD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDSR","2:8":"HPRSD","3:8":"PHRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"PHRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRSP","6:9":"HRPSD","7:9":"HRPSD","8:9":"PHRSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHDRS","2:10":"HPRSD","3:10":"HPRSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"RSHPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HRPSD","4:11":"HRPSD","5:11":"HDRSP","6:11":"HRSPD","7:11":"RHSPD","8:11":"PRHSD","9:11":"SPRHD","10:11":"SPRHD"},"pairN":{"11:2":"PHDSR","2:2":"HPSRD","3:2":"HPSRD","4:2":"HDPSR","5:2":"DHPSR","6:2":"PHSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"PHSDR","3:3":"HPSDR","4:3":"HDPSR","5:3":"DHPSR","6:3":"PSHDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HDPSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PDHSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"DHPSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"DHPSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HDPSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHRSD","8:7":"PHRSD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDSR","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRSP","6:9":"HRSPD","7:9":"HRSPD","8:9":"PHRSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHDRS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"RSHPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HRPSD","4:11":"HRSPD","5:11":"HDRSP","6:11":"HRSPD","7:11":"RHSPD","8:11":"PRHSD","9:11":"SPRHD","10:11":"SPRHD"}},"1S":{"hard":{"5:2":"HSRD","6:2":"HSRD","7:2":"HSDR","8:2":"HDSR","9:2":"DHSR","10:2":"DHSR","11:2":"DHSR","12:2":"HSRD","13:2":"SHRD","14:2":"SHRD","15:2":"SHRD","16:2":"SHRD","17:2":"SRHD","5:3":"HSDR","6:3":"HSDR","7:3":"HSDR","8:3":"HDSR","9:3":"DHSR","10:3":"DHSR","11:3":"DHSR","12:3":"HSDR","13:3":"SHRD","14:3":"SHRD","15:3":"SHRD","16:3":"SHRD","17:3":"SRHD","5:4":"HSDR","6:4":"HSDR","7:4":"HSDR","8:4":"HDSR","9:4":"DHSR","10:4":"DHSR","11:4":"DHSR","12:4":"SHDR","13:4":"SHRD","14:4":"SHRD","15:4":"SHRD","16:4":"SHRD","17:4":"SRHD","5:5":"HSDR","6:5":"HSDR","7:5":"HDSR","8:5":"DHSR","9:5":"DHSR","10:5":"DHSR","11:5":"DHSR","12:5":"SHDR","13:5":"SHDR","14:5":"SHRD","15:5":"SHRD","16:5":"SHRD","17:5":"SHRD","5:6":"HSDR","6:6":"HSDR","7:6":"HDSR","8:6":"DHSR","9:6":"DHSR","10:6":"DHSR","11:6":"DHSR","12:6":"SHDR","13:6":"SHDR","14:6":"SHRD","15:6":"SHRD","16:6":"SHRD","17:6":"SHRD","5:7":"HSRD","6:7":"HSRD","7:7":"HSRD","8:7":"HDSR","9:7":"HDSR","10:7":"DHSR","11:7":"DHSR","12:7":"HSRD","13:7":"HSRD","14:7":"HSRD","15:7":"HSRD","16:7":"HSRD","17:7":"SHRD","5:8":"HRSD","6:8":"HRSD","7:8":"HRSD","8:8":"HDRS","9:8":"HDRS","10:8":"DHRS","11:8":"DHRS","12:8":"HRSD","13:8":"HRSD","14:8":"HRSD","15:8":"HRSD","16:8":"HRSD","17:8":"SHRD","5:9":"HRSD","6:9":"HRSD","7:9":"HRSD","8:9":"HRSD","9:9":"HDRS","10:9":"DHRS","11:9":"DHRS","12:9":"HRSD","13:9":"HRSD","14:9":"HRSD","15:9":"HRSD","16:9":"HRSD","17:9":"SRHD","5:10":"HRSD","6:10":"HRSD","7:10":"HRSD","8:10":"HRSD","9:10":"HDRS","10:10":"HDRS","11:10":"DHRS","12:10":"HRSD","13:10":"HRSD","14:10":"HRSD","15:10":"HRSD","16:10":"RHSD","17:10":"SRHD","5:11":"HRSD","6:11":"HRSD","7:11":"HRSD","8:11":"HRSD","9:11":"HDRS","10:11":"HDRS","11:11":"DHRS","12:11":"HRSD","13:11":"HRSD","14:11":"HRSD","15:11":"HRSD","16:11":"RHSD","17:11":"SRHD"},"soft":{"13:2":"HDSR","14:2":"HDSR","15:2":"HDSR","16:2":"HDSR","17:2":"DHSR","18:2":"SDHR","19:2":"SDHR","20:2":"SDHR","13:3":"HDSR","14:3":"HDSR","15:3":"HDSR","16:3":"HDSR","17:3":"DHSR","18:3":"DSHR","19:3":"SDHR","20:3":"SDHR","13:4":"DHSR","14:4":"DHSR","15:4":"DHSR","16:4":"DHSR","17:4":"DHSR","18:4":"DSHR","19:4":"SDHR","20:4":"SDHR","13:5":"DHSR","14:5":"DHSR","15:5":"DHSR","16:5":"DHSR","17:5":"DHSR","18:5":"DSHR","19:5":"SDHR","20:5":"SDHR","13:6":"DHSR","14:6":"DHSR","15:6":"DHSR","16:6":"DHSR","17:6":"DHSR","18:6":"DSHR","19:6":"DSHR","20:6":"SDHR","13:7":"HDSR","14:7":"HDSR","15:7":"HDSR","16:7":"HDSR","17:7":"HDSR","18:7":"SDHR","19:7":"SDHR","20:7":"SDHR","13:8":"HDRS","14:8":"HDRS","15:8":"HDRS","16:8":"HDRS","17:8":"HDSR","18:8":"SHDR","19:8":"SDHR","20:8":"SDHR","13:9":"HDRS","14:9":"HDRS","15:9":"HDRS","16:9":"HDRS","17:9":"HDSR","18:9":"HSDR","19:9":"SHDR","20:9":"SDHR","13:10":"HDRS","14:10":"HDRS","15:10":"HDRS","16:10":"HRDS","17:10":"HSDR","18:10":"HSDR","19:10":"SHDR","20:10":"SHDR","13:11":"HRDS","14:11":"HRDS","15:11":"HRDS","16:11":"HRDS","17:11":"HSRD","18:11":"SHDR","19:11":"SHDR","20:11":"SHDR"},"pairD":{"11:2":"PHDSR","2:2":"PHSRD","3:2":"PHSRD","4:2":"HPDSR","5:2":"DHPSR","6:2":"PHSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"PHSRD","3:3":"PHSDR","4:3":"HPDSR","5:3":"DHPSR","6:3":"PSHDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"PHDSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PDHSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"PDHSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"PDHSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HDPSR","5:7":"DHPSR","6:7":"PHSRD","7:7":"PHRSD","8:7":"PHRSD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDSR","2:8":"HPRSD","3:8":"PHRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"PHRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRSP","6:9":"HRPSD","7:9":"HRPSD","8:9":"PHRSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHDRS","2:10":"HPRSD","3:10":"HPRSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"RSHPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HPRSD","4:11":"HRPSD","5:11":"HDRPS","6:11":"HRPSD","7:11":"HRPSD","8:11":"PHRSD","9:11":"SPRHD","10:11":"SPRHD"},"pairN":{"11:2":"PHDSR","2:2":"HPSRD","3:2":"HPSRD","4:2":"HDPSR","5:2":"DHPSR","6:2":"PHSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"PHSRD","3:3":"HPSDR","4:3":"HDPSR","5:3":"DHPSR","6:3":"PSHDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HDPSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PDHSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"DHPSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"DHPSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HDPSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHRSD","8:7":"PHRSD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDSR","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRSP","6:9":"HRSPD","7:9":"HRSPD","8:9":"PHRSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHDRS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"RSHPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HPRSD","4:11":"HRPSD","5:11":"HDRPS","6:11":"HRSPD","7:11":"HRPSD","8:11":"PHRSD","9:11":"SPRHD","10:11":"SPRHD"}},"2H":{"hard":{"5:2":"HSRD","6:2":"HSRD","7:2":"HSDR","8:2":"HDSR","9:2":"DHSR","10:2":"DHSR","11:2":"DHSR","12:2":"HSRD","13:2":"SHRD","14:2":"SHRD","15:2":"SHRD","16:2":"SHRD","17:2":"SRHD","5:3":"HSDR","6:3":"HSDR","7:3":"HSDR","8:3":"HDSR","9:3":"DHSR","10:3":"DHSR","11:3":"DHSR","12:3":"HSDR","13:3":"SHRD","14:3":"SHRD","15:3":"SHRD","16:3":"SHRD","17:3":"SRHD","5:4":"HSDR","6:4":"HSDR","7:4":"HSDR","8:4":"HDSR","9:4":"DHSR","10:4":"DHSR","11:4":"DHSR","12:4":"SHDR","13:4":"SHRD","14:4":"SHRD","15:4":"SHRD","16:4":"SHRD","17:4":"SRHD","5:5":"HSDR","6:5":"HSDR","7:5":"HSDR","8:5":"HDSR","9:5":"DHSR","10:5":"DHSR","11:5":"DHSR","12:5":"SHDR","13:5":"SHRD","14:5":"SHRD","15:5":"SHRD","16:5":"SHRD","17:5":"SRHD","5:6":"HSDR","6:6":"HSDR","7:6":"HDSR","8:6":"HDSR","9:6":"DHSR","10:6":"DHSR","11:6":"DHSR","12:6":"SHDR","13:6":"SHDR","14:6":"SHRD","15:6":"SHRD","16:6":"SHRD","17:6":"SRHD","5:7":"HSRD","6:7":"HSRD","7:7":"HSRD","8:7":"HDSR","9:7":"HDSR","10:7":"DHSR","11:7":"DHSR","12:7":"HSRD","13:7":"HSRD","14:7":"HSRD","15:7":"HSRD","16:7":"HSRD","17:7":"SHRD","5:8":"HRSD","6:8":"HRSD","7:8":"HRSD","8:8":"HDRS","9:8":"HDRS","10:8":"DHRS","11:8":"DHRS","12:8":"HRSD","13:8":"HRSD","14:8":"HRSD","15:8":"HRSD","16:8":"HRSD","17:8":"SHRD","5:9":"HRSD","6:9":"HRSD","7:9":"HRSD","8:9":"HRSD","9:9":"HDRS","10:9":"DHRS","11:9":"DHRS","12:9":"HRSD","13:9":"HRSD","14:9":"HRSD","15:9":"HRSD","16:9":"HRSD","17:9":"SRHD","5:10":"HRSD","6:10":"HRSD","7:10":"HRSD","8:10":"HRSD","9:10":"HDRS","10:10":"HDRS","11:10":"DHRS","12:10":"HRSD","13:10":"HRSD","14:10":"HRSD","15:10":"RHSD","16:10":"RHSD","17:10":"SRHD","5:11":"HRSD","6:11":"HRSD","7:11":"HRSD","8:11":"HRSD","9:11":"HDRS","10:11":"HDRS","11:11":"DHRS","12:11":"HRSD","13:11":"HRSD","14:11":"HRSD","15:11":"RHSD","16:11":"RHSD","17:11":"RSHD"},"soft":{"13:2":"HDSR","14:2":"HDSR","15:2":"HDSR","16:2":"HDSR","17:2":"HDSR","18:2":"DSHR","19:2":"SDHR","20:2":"SDHR","13:3":"HDSR","14:3":"HDSR","15:3":"HDSR","16:3":"HDSR","17:3":"DHSR","18:3":"DSHR","19:3":"SDHR","20:3":"SDHR","13:4":"HDSR","14:4":"DHSR","15:4":"DHSR","16:4":"DHSR","17:4":"DHSR","18:4":"DSHR","19:4":"SDHR","20:4":"SDHR","13:5":"DHSR","14:5":"DHSR","15:5":"DHSR","16:5":"DHSR","17:5":"DHSR","18:5":"DSHR","19:5":"SDHR","20:5":"SDHR","13:6":"DHSR","14:6":"DHSR","15:6":"DHSR","16:6":"DHSR","17:6":"DHSR","18:6":"DSHR","19:6":"DSHR","20:6":"SDHR","13:7":"HDSR","14:7":"HDSR","15:7":"HDSR","16:7":"HDSR","17:7":"HDSR","18:7":"SDHR","19:7":"SDHR","20:7":"SDHR","13:8":"HDRS","14:8":"HDRS","15:8":"HDRS","16:8":"HDRS","17:8":"HDSR","18:8":"SHDR","19:8":"SDHR","20:8":"SDHR","13:9":"HDRS","14:9":"HDRS","15:9":"HDRS","16:9":"HDRS","17:9":"HDSR","18:9":"HSDR","19:9":"SHDR","20:9":"SDHR","13:10":"HDRS","14:10":"HDRS","15:10":"HRDS","16:10":"HRDS","17:10":"HSDR","18:10":"HSDR","19:10":"SHDR","20:10":"SHDR","13:11":"HRDS","14:11":"HRDS","15:11":"HRDS","16:11":"HRSD","17:11":"HRSD","18:11":"HSDR","19:11":"SHDR","20:11":"SHDR"},"pairD":{"11:2":"PHDSR","2:2":"PHSRD","3:2":"PHSRD","4:2":"HPDSR","5:2":"DHPSR","6:2":"PHSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"PHSDR","3:3":"PHSDR","4:3":"HPDSR","5:3":"DHPSR","6:3":"PSHDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HPDSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PDHSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"PHDSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"PHDSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HPDSR","5:7":"DHPSR","6:7":"PHSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"PHRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRSP","6:9":"HRSPD","7:9":"HRSPD","8:9":"PHRSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHDRS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HRPSD","4:11":"HRPSD","5:11":"HDRSP","6:11":"HRSPD","7:11":"HRSPD","8:11":"PRHSD","9:11":"SPRHD","10:11":"SPRHD"},"pairN":{"11:2":"PHDSR","2:2":"HPSRD","3:2":"HPSRD","4:2":"HDPSR","5:2":"DHPSR","6:2":"PHSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"HPSDR","3:3":"HPSDR","4:3":"HDPSR","5:3":"DHPSR","6:3":"PSHDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HDPSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PDHSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"HDPSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"HDPSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HDPSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRSP","6:9":"HRSPD","7:9":"HRSPD","8:9":"PHRSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHDRS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HRPSD","4:11":"HRPSD","5:11":"HDRSP","6:11":"HRSPD","7:11":"HRSPD","8:11":"RPHSD","9:11":"SPRHD","10:11":"SPRHD"}},"2S":{"hard":{"5:2":"HSRD","6:2":"HSRD","7:2":"HSDR","8:2":"HDSR","9:2":"DHSR","10:2":"DHSR","11:2":"DHSR","12:2":"HSRD","13:2":"SHRD","14:2":"SHRD","15:2":"SHRD","16:2":"SHRD","17:2":"SRHD","5:3":"HSDR","6:3":"HSDR","7:3":"HSDR","8:3":"HDSR","9:3":"DHSR","10:3":"DHSR","11:3":"DHSR","12:3":"HSDR","13:3":"SHRD","14:3":"SHRD","15:3":"SHRD","16:3":"SHRD","17:3":"SRHD","5:4":"HSDR","6:4":"HSDR","7:4":"HSDR","8:4":"HDSR","9:4":"DHSR","10:4":"DHSR","11:4":"DHSR","12:4":"SHDR","13:4":"SHRD","14:4":"SHRD","15:4":"SHRD","16:4":"SHRD","17:4":"SRHD","5:5":"HSDR","6:5":"HSDR","7:5":"HSDR","8:5":"HDSR","9:5":"DHSR","10:5":"DHSR","11:5":"DHSR","12:5":"SHDR","13:5":"SHRD","14:5":"SHRD","15:5":"SHRD","16:5":"SHRD","17:5":"SRHD","5:6":"HSDR","6:6":"HSDR","7:6":"HDSR","8:6":"HDSR","9:6":"DHSR","10:6":"DHSR","11:6":"DHSR","12:6":"SHDR","13:6":"SHDR","14:6":"SHRD","15:6":"SHRD","16:6":"SHRD","17:6":"SHRD","5:7":"HSRD","6:7":"HSRD","7:7":"HSRD","8:7":"HDSR","9:7":"HDSR","10:7":"DHSR","11:7":"DHSR","12:7":"HSRD","13:7":"HSRD","14:7":"HSRD","15:7":"HSRD","16:7":"HSRD","17:7":"SHRD","5:8":"HRSD","6:8":"HRSD","7:8":"HRSD","8:8":"HDRS","9:8":"HDRS","10:8":"DHRS","11:8":"DHRS","12:8":"HRSD","13:8":"HRSD","14:8":"HRSD","15:8":"HRSD","16:8":"HRSD","17:8":"SHRD","5:9":"HRSD","6:9":"HRSD","7:9":"HRSD","8:9":"HRSD","9:9":"HDRS","10:9":"DHRS","11:9":"DHRS","12:9":"HRSD","13:9":"HRSD","14:9":"HRSD","15:9":"HRSD","16:9":"HRSD","17:9":"SRHD","5:10":"HRSD","6:10":"HRSD","7:10":"HRSD","8:10":"HRSD","9:10":"HDRS","10:10":"HDRS","11:10":"DHRS","12:10":"HRSD","13:10":"HRSD","14:10":"HRSD","15:10":"RHSD","16:10":"RHSD","17:10":"SRHD","5:11":"HRSD","6:11":"HRSD","7:11":"HRSD","8:11":"HRSD","9:11":"HDRS","10:11":"HDRS","11:11":"HDRS","12:11":"HRSD","13:11":"HRSD","14:11":"HRSD","15:11":"HRSD","16:11":"RHSD","17:11":"SRHD"},"soft":{"13:2":"HDSR","14:2":"HDSR","15:2":"HDSR","16:2":"HDSR","17:2":"HDSR","18:2":"SDHR","19:2":"SDHR","20:2":"SDHR","13:3":"HDSR","14:3":"HDSR","15:3":"HDSR","16:3":"HDSR","17:3":"DHSR","18:3":"DSHR","19:3":"SDHR","20:3":"SDHR","13:4":"HDSR","14:4":"HDSR","15:4":"DHSR","16:4":"DHSR","17:4":"DHSR","18:4":"DSHR","19:4":"SDHR","20:4":"SDHR","13:5":"DHSR","14:5":"DHSR","15:5":"DHSR","16:5":"DHSR","17:5":"DHSR","18:5":"DSHR","19:5":"SDHR","20:5":"SDHR","13:6":"DHSR","14:6":"DHSR","15:6":"DHSR","16:6":"DHSR","17:6":"DHSR","18:6":"DSHR","19:6":"SDHR","20:6":"SDHR","13:7":"HDSR","14:7":"HDSR","15:7":"HDSR","16:7":"HDSR","17:7":"HDSR","18:7":"SDHR","19:7":"SDHR","20:7":"SDHR","13:8":"HDRS","14:8":"HDRS","15:8":"HDRS","16:8":"HDRS","17:8":"HDSR","18:8":"SHDR","19:8":"SDHR","20:8":"SDHR","13:9":"HDRS","14:9":"HDRS","15:9":"HDRS","16:9":"HDRS","17:9":"HDSR","18:9":"HSDR","19:9":"SHDR","20:9":"SDHR","13:10":"HDRS","14:10":"HDRS","15:10":"HRDS","16:10":"HRDS","17:10":"HSDR","18:10":"HSDR","19:10":"SHDR","20:10":"SHDR","13:11":"HRDS","14:11":"HRDS","15:11":"HRDS","16:11":"HRDS","17:11":"HSRD","18:11":"HSDR","19:11":"SHDR","20:11":"SHDR"},"pairD":{"11:2":"PHDSR","2:2":"PHSRD","3:2":"PHSRD","4:2":"HPDSR","5:2":"DHPSR","6:2":"PHSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"PHSRD","3:3":"PHSDR","4:3":"HPDSR","5:3":"DHPSR","6:3":"PHSDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HPDSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PDHSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"PHDSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"PHDSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HPDSR","5:7":"DHPSR","6:7":"PHSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"PHRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRSP","6:9":"HRSPD","7:9":"HRSPD","8:9":"PHRSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHDRS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HPRSD","4:11":"HRPSD","5:11":"HDRPS","6:11":"HRPSD","7:11":"HRPSD","8:11":"PRHSD","9:11":"SPRHD","10:11":"SPRHD"},"pairN":{"11:2":"PHDSR","2:2":"HPSRD","3:2":"HPSRD","4:2":"HDPSR","5:2":"DHPSR","6:2":"PHSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"HPSRD","3:3":"HPSDR","4:3":"HDPSR","5:3":"DHPSR","6:3":"PHSDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HDPSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PDHSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"HDPSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"HDPSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HDPSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRSP","6:9":"HRSPD","7:9":"HRSPD","8:9":"PHRSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHDRS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HPRSD","4:11":"HRPSD","5:11":"HDRPS","6:11":"HRPSD","7:11":"HRPSD","8:11":"PRHSD","9:11":"SPRHD","10:11":"SPRHD"}},"4H":{"hard":{"5:2":"HSRD","6:2":"HSRD","7:2":"HSDR","8:2":"HDSR","9:2":"HDSR","10:2":"DHSR","11:2":"DHSR","12:2":"HSRD","13:2":"SHRD","14:2":"SHRD","15:2":"SHRD","16:2":"SHRD","17:2":"SRHD","5:3":"HSDR","6:3":"HSDR","7:3":"HSDR","8:3":"HDSR","9:3":"DHSR","10:3":"DHSR","11:3":"DHSR","12:3":"HSDR","13:3":"SHRD","14:3":"SHRD","15:3":"SHRD","16:3":"SHRD","17:3":"SRHD","5:4":"HSDR","6:4":"HSDR","7:4":"HSDR","8:4":"HDSR","9:4":"DHSR","10:4":"DHSR","11:4":"DHSR","12:4":"SHDR","13:4":"SHRD","14:4":"SHRD","15:4":"SHRD","16:4":"SHRD","17:4":"SRHD","5:5":"HSDR","6:5":"HSDR","7:5":"HSDR","8:5":"HDSR","9:5":"DHSR","10:5":"DHSR","11:5":"DHSR","12:5":"SHDR","13:5":"SHRD","14:5":"SHRD","15:5":"SHRD","16:5":"SHRD","17:5":"SRHD","5:6":"HSDR","6:6":"HSDR","7:6":"HDSR","8:6":"HDSR","9:6":"DHSR","10:6":"DHSR","11:6":"DHSR","12:6":"SHDR","13:6":"SHDR","14:6":"SHRD","15:6":"SHRD","16:6":"SHRD","17:6":"SRHD","5:7":"HSRD","6:7":"HSRD","7:7":"HSRD","8:7":"HDSR","9:7":"HDSR","10:7":"DHSR","11:7":"DHSR","12:7":"HSRD","13:7":"HSRD","14:7":"HSRD","15:7":"HSRD","16:7":"HSRD","17:7":"SHRD","5:8":"HRSD","6:8":"HRSD","7:8":"HRSD","8:8":"HDRS","9:8":"HDRS","10:8":"DHRS","11:8":"DHRS","12:8":"HRSD","13:8":"HRSD","14:8":"HRSD","15:8":"HRSD","16:8":"HRSD","17:8":"SHRD","5:9":"HRSD","6:9":"HRSD","7:9":"HRSD","8:9":"HRSD","9:9":"HDRS","10:9":"DHRS","11:9":"DHRS","12:9":"HRSD","13:9":"HRSD","14:9":"HRSD","15:9":"HRSD","16:9":"RHSD","17:9":"SRHD","5:10":"HRSD","6:10":"HRSD","7:10":"HRSD","8:10":"HRSD","9:10":"HDRS","10:10":"HDRS","11:10":"DHRS","12:10":"HRSD","13:10":"HRSD","14:10":"HRSD","15:10":"RHSD","16:10":"RHSD","17:10":"SRHD","5:11":"HRSD","6:11":"HRSD","7:11":"HRSD","8:11":"HRSD","9:11":"HDRS","10:11":"HDRS","11:11":"DHRS","12:11":"HRSD","13:11":"HRSD","14:11":"HRSD","15:11":"RHSD","16:11":"RHSD","17:11":"RSHD"},"soft":{"13:2":"HDSR","14:2":"HDSR","15:2":"HDSR","16:2":"HDSR","17:2":"HDSR","18:2":"DSHR","19:2":"SDHR","20:2":"SDHR","13:3":"HDSR","14:3":"HDSR","15:3":"HDSR","16:3":"HDSR","17:3":"DHSR","18:3":"DSHR","19:3":"SDHR","20:3":"SDHR","13:4":"HDSR","14:4":"HDSR","15:4":"DHSR","16:4":"DHSR","17:4":"DHSR","18:4":"DSHR","19:4":"SDHR","20:4":"SDHR","13:5":"DHSR","14:5":"DHSR","15:5":"DHSR","16:5":"DHSR","17:5":"DHSR","18:5":"DSHR","19:5":"SDHR","20:5":"SDHR","13:6":"DHSR","14:6":"DHSR","15:6":"DHSR","16:6":"DHSR","17:6":"DHSR","18:6":"DSHR","19:6":"DSHR","20:6":"SDHR","13:7":"HDSR","14:7":"HDSR","15:7":"HDSR","16:7":"HDSR","17:7":"HDSR","18:7":"SDHR","19:7":"SDHR","20:7":"SDHR","13:8":"HDRS","14:8":"HDRS","15:8":"HDRS","16:8":"HDRS","17:8":"HDSR","18:8":"SHDR","19:8":"SDHR","20:8":"SDHR","13:9":"HDRS","14:9":"HDRS","15:9":"HDRS","16:9":"HDRS","17:9":"HDSR","18:9":"HSDR","19:9":"SHDR","20:9":"SDHR","13:10":"HRDS","14:10":"HRDS","15:10":"HRDS","16:10":"HRDS","17:10":"HSDR","18:10":"HSDR","19:10":"SHDR","20:10":"SHDR","13:11":"HRDS","14:11":"HRDS","15:11":"HRDS","16:11":"HRDS","17:11":"HRSD","18:11":"HSDR","19:11":"SHDR","20:11":"SHDR"},"pairD":{"11:2":"PHDSR","2:2":"PHSRD","3:2":"PHSRD","4:2":"HPDSR","5:2":"DHPSR","6:2":"PHSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"PHSDR","3:3":"PHSDR","4:3":"HPDSR","5:3":"DHPSR","6:3":"PHSDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HPDSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PHDSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"PHDSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"PHDSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HPDSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRPS","6:9":"HRSPD","7:9":"HRSPD","8:9":"PRHSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHRDS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HRPSD","4:11":"HRPSD","5:11":"HDRSP","6:11":"HRSPD","7:11":"HRSPD","8:11":"RPHSD","9:11":"SPRHD","10:11":"SPRHD"},"pairN":{"11:2":"PHDSR","2:2":"HPSRD","3:2":"HPSRD","4:2":"HDPSR","5:2":"DHPSR","6:2":"HPSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"HPSDR","3:3":"HPSDR","4:3":"HDPSR","5:3":"DHPSR","6:3":"PHSDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HDPSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PHDSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"HDPSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"HDPSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HDPSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRSP","6:9":"HRSPD","7:9":"HRSPD","8:9":"PRHSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHRDS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HRPSD","4:11":"HRPSD","5:11":"HDRSP","6:11":"HRSPD","7:11":"HRSPD","8:11":"RPHSD","9:11":"SPRHD","10:11":"SPRHD"}},"4S":{"hard":{"5:2":"HSRD","6:2":"HSRD","7:2":"HSDR","8:2":"HDSR","9:2":"HDSR","10:2":"DHSR","11:2":"DHSR","12:2":"HSRD","13:2":"SHRD","14:2":"SHRD","15:2":"SHRD","16:2":"SHRD","17:2":"SRHD","5:3":"HSRD","6:3":"HSDR","7:3":"HSDR","8:3":"HDSR","9:3":"DHSR","10:3":"DHSR","11:3":"DHSR","12:3":"HSDR","13:3":"SHRD","14:3":"SHRD","15:3":"SHRD","16:3":"SHRD","17:3":"SRHD","5:4":"HSDR","6:4":"HSDR","7:4":"HSDR","8:4":"HDSR","9:4":"DHSR","10:4":"DHSR","11:4":"DHSR","12:4":"SHDR","13:4":"SHRD","14:4":"SHRD","15:4":"SHRD","16:4":"SHRD","17:4":"SRHD","5:5":"HSDR","6:5":"HSDR","7:5":"HSDR","8:5":"HDSR","9:5":"DHSR","10:5":"DHSR","11:5":"DHSR","12:5":"SHDR","13:5":"SHRD","14:5":"SHRD","15:5":"SHRD","16:5":"SHRD","17:5":"SRHD","5:6":"HSDR","6:6":"HSDR","7:6":"HDSR","8:6":"HDSR","9:6":"DHSR","10:6":"DHSR","11:6":"DHSR","12:6":"SHDR","13:6":"SHDR","14:6":"SHRD","15:6":"SHRD","16:6":"SHRD","17:6":"SRHD","5:7":"HSRD","6:7":"HSRD","7:7":"HSRD","8:7":"HDSR","9:7":"HDSR","10:7":"DHSR","11:7":"DHSR","12:7":"HSRD","13:7":"HSRD","14:7":"HSRD","15:7":"HSRD","16:7":"HSRD","17:7":"SHRD","5:8":"HRSD","6:8":"HRSD","7:8":"HRSD","8:8":"HDRS","9:8":"HDRS","10:8":"DHRS","11:8":"DHRS","12:8":"HRSD","13:8":"HRSD","14:8":"HRSD","15:8":"HRSD","16:8":"HRSD","17:8":"SHRD","5:9":"HRSD","6:9":"HRSD","7:9":"HRSD","8:9":"HRSD","9:9":"HDRS","10:9":"DHRS","11:9":"DHRS","12:9":"HRSD","13:9":"HRSD","14:9":"HRSD","15:9":"HRSD","16:9":"RHSD","17:9":"SRHD","5:10":"HRSD","6:10":"HRSD","7:10":"HRSD","8:10":"HRSD","9:10":"HDRS","10:10":"HDRS","11:10":"DHRS","12:10":"HRSD","13:10":"HRSD","14:10":"HRSD","15:10":"RHSD","16:10":"RHSD","17:10":"SRHD","5:11":"HRSD","6:11":"HRSD","7:11":"HRSD","8:11":"HRSD","9:11":"HDRS","10:11":"HDRS","11:11":"HDRS","12:11":"HRSD","13:11":"HRSD","14:11":"HRSD","15:11":"HRSD","16:11":"RHSD","17:11":"SRHD"},"soft":{"13:2":"HDSR","14:2":"HDSR","15:2":"HDSR","16:2":"HDSR","17:2":"HDSR","18:2":"SDHR","19:2":"SDHR","20:2":"SDHR","13:3":"HDSR","14:3":"HDSR","15:3":"HDSR","16:3":"HDSR","17:3":"DHSR","18:3":"DSHR","19:3":"SDHR","20:3":"SDHR","13:4":"HDSR","14:4":"HDSR","15:4":"DHSR","16:4":"DHSR","17:4":"DHSR","18:4":"DSHR","19:4":"SDHR","20:4":"SDHR","13:5":"DHSR","14:5":"DHSR","15:5":"DHSR","16:5":"DHSR","17:5":"DHSR","18:5":"DSHR","19:5":"SDHR","20:5":"SDHR","13:6":"DHSR","14:6":"DHSR","15:6":"DHSR","16:6":"DHSR","17:6":"DHSR","18:6":"DSHR","19:6":"SDHR","20:6":"SDHR","13:7":"HDSR","14:7":"HDSR","15:7":"HDSR","16:7":"HDSR","17:7":"HDSR","18:7":"SDHR","19:7":"SDHR","20:7":"SDHR","13:8":"HDRS","14:8":"HDRS","15:8":"HDRS","16:8":"HDRS","17:8":"HDSR","18:8":"SHDR","19:8":"SDHR","20:8":"SDHR","13:9":"HDRS","14:9":"HDRS","15:9":"HDRS","16:9":"HDRS","17:9":"HDSR","18:9":"HSDR","19:9":"SHDR","20:9":"SDHR","13:10":"HRDS","14:10":"HRDS","15:10":"HRDS","16:10":"HRDS","17:10":"HSDR","18:10":"HSDR","19:10":"SHDR","20:10":"SHDR","13:11":"HRDS","14:11":"HRDS","15:11":"HRDS","16:11":"HRDS","17:11":"HSRD","18:11":"HSDR","19:11":"SHDR","20:11":"SHDR"},"pairD":{"11:2":"PHDSR","2:2":"PHSRD","3:2":"PHSRD","4:2":"HPDSR","5:2":"DHPSR","6:2":"PHSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"PHSRD","3:3":"PHSDR","4:3":"HPDSR","5:3":"DHPSR","6:3":"PHSDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HPDSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PHDSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"PHDSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"PHDSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HPDSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRPS","6:9":"HRSPD","7:9":"HRSPD","8:9":"PRHSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHRDS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HPRSD","4:11":"HRPSD","5:11":"HDRPS","6:11":"HRPSD","7:11":"HRPSD","8:11":"PRHSD","9:11":"SPRHD","10:11":"SPRHD"},"pairN":{"11:2":"PHDSR","2:2":"HPSRD","3:2":"HPSRD","4:2":"HDPSR","5:2":"DHPSR","6:2":"HPSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"HPSRD","3:3":"HPSDR","4:3":"HDPSR","5:3":"DHPSR","6:3":"PHSDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HDPSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PHDSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"HDPSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"HDPSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HDPSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRSP","6:9":"HRSPD","7:9":"HRSPD","8:9":"PRHSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHRDS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HPRSD","4:11":"HRPSD","5:11":"HDRPS","6:11":"HRPSD","7:11":"HRPSD","8:11":"PRHSD","9:11":"SPRHD","10:11":"SPRHD"}},"6H":{"hard":{"5:2":"HSRD","6:2":"HSRD","7:2":"HSDR","8:2":"HDSR","9:2":"HDSR","10:2":"DHSR","11:2":"DHSR","12:2":"HSRD","13:2":"SHRD","14:2":"SHRD","15:2":"SHRD","16:2":"SHRD","17:2":"SRHD","5:3":"HSDR","6:3":"HSDR","7:3":"HSDR","8:3":"HDSR","9:3":"DHSR","10:3":"DHSR","11:3":"DHSR","12:3":"HSDR","13:3":"SHRD","14:3":"SHRD","15:3":"SHRD","16:3":"SHRD","17:3":"SRHD","5:4":"HSDR","6:4":"HSDR","7:4":"HSDR","8:4":"HDSR","9:4":"DHSR","10:4":"DHSR","11:4":"DHSR","12:4":"SHDR","13:4":"SHRD","14:4":"SHRD","15:4":"SHRD","16:4":"SHRD","17:4":"SRHD","5:5":"HSDR","6:5":"HSDR","7:5":"HSDR","8:5":"HDSR","9:5":"DHSR","10:5":"DHSR","11:5":"DHSR","12:5":"SHDR","13:5":"SHRD","14:5":"SHRD","15:5":"SHRD","16:5":"SHRD","17:5":"SRHD","5:6":"HSDR","6:6":"HSDR","7:6":"HDSR","8:6":"HDSR","9:6":"DHSR","10:6":"DHSR","11:6":"DHSR","12:6":"SHDR","13:6":"SHDR","14:6":"SHRD","15:6":"SHRD","16:6":"SHRD","17:6":"SRHD","5:7":"HSRD","6:7":"HSRD","7:7":"HSRD","8:7":"HDSR","9:7":"HDSR","10:7":"DHSR","11:7":"DHSR","12:7":"HSRD","13:7":"HSRD","14:7":"HSRD","15:7":"HSRD","16:7":"HSRD","17:7":"SHRD","5:8":"HRSD","6:8":"HRSD","7:8":"HRSD","8:8":"HDRS","9:8":"HDRS","10:8":"DHRS","11:8":"DHRS","12:8":"HRSD","13:8":"HRSD","14:8":"HRSD","15:8":"HRSD","16:8":"HRSD","17:8":"SRHD","5:9":"HRSD","6:9":"HRSD","7:9":"HRSD","8:9":"HRSD","9:9":"HDRS","10:9":"DHRS","11:9":"DHRS","12:9":"HRSD","13:9":"HRSD","14:9":"HRSD","15:9":"HRSD","16:9":"RHSD","17:9":"SRHD","5:10":"HRSD","6:10":"HRSD","7:10":"HRSD","8:10":"HRSD","9:10":"HDRS","10:10":"HDRS","11:10":"DHRS","12:10":"HRSD","13:10":"HRSD","14:10":"HRSD","15:10":"RHSD","16:10":"RHSD","17:10":"SRHD","5:11":"HRSD","6:11":"HRSD","7:11":"HRSD","8:11":"HRSD","9:11":"HDRS","10:11":"HDRS","11:11":"DHRS","12:11":"HRSD","13:11":"HRSD","14:11":"HRSD","15:11":"RHSD","16:11":"RHSD","17:11":"RSHD"},"soft":{"13:2":"HDSR","14:2":"HDSR","15:2":"HDSR","16:2":"HDSR","17:2":"HDSR","18:2":"DSHR","19:2":"SDHR","20:2":"SDHR","13:3":"HDSR","14:3":"HDSR","15:3":"HDSR","16:3":"HDSR","17:3":"DHSR","18:3":"DSHR","19:3":"SDHR","20:3":"SDHR","13:4":"HDSR","14:4":"HDSR","15:4":"DHSR","16:4":"DHSR","17:4":"DHSR","18:4":"DSHR","19:4":"SDHR","20:4":"SDHR","13:5":"DHSR","14:5":"DHSR","15:5":"DHSR","16:5":"DHSR","17:5":"DHSR","18:5":"DSHR","19:5":"SDHR","20:5":"SDHR","13:6":"DHSR","14:6":"DHSR","15:6":"DHSR","16:6":"DHSR","17:6":"DHSR","18:6":"DSHR","19:6":"DSHR","20:6":"SDHR","13:7":"HDSR","14:7":"HDSR","15:7":"HDSR","16:7":"HDSR","17:7":"HDSR","18:7":"SDHR","19:7":"SDHR","20:7":"SDHR","13:8":"HDRS","14:8":"HDRS","15:8":"HDRS","16:8":"HDRS","17:8":"HDSR","18:8":"SHDR","19:8":"SDHR","20:8":"SDHR","13:9":"HDRS","14:9":"HDRS","15:9":"HDRS","16:9":"HDRS","17:9":"HDSR","18:9":"HSDR","19:9":"SHDR","20:9":"SDHR","13:10":"HRDS","14:10":"HRDS","15:10":"HRDS","16:10":"HRDS","17:10":"HSDR","18:10":"HSDR","19:10":"SHDR","20:10":"SHDR","13:11":"HRDS","14:11":"HRDS","15:11":"HRDS","16:11":"HRDS","17:11":"HRSD","18:11":"HSDR","19:11":"SHDR","20:11":"SHDR"},"pairD":{"11:2":"PHDSR","2:2":"PHSRD","3:2":"PHSRD","4:2":"HPDSR","5:2":"DHPSR","6:2":"PHSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"PHSDR","3:3":"PHSDR","4:3":"HPDSR","5:3":"DHPSR","6:3":"PHSDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HPDSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PHDSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"PHDSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"PHDSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HPDSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRPS","6:9":"HRSPD","7:9":"HRSPD","8:9":"PRHSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHRDS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HRPSD","4:11":"HRPSD","5:11":"HDRSP","6:11":"HRSPD","7:11":"HRSPD","8:11":"RPHSD","9:11":"SPRHD","10:11":"SPRHD"},"pairN":{"11:2":"PHDSR","2:2":"HPSRD","3:2":"HPSRD","4:2":"HDPSR","5:2":"DHPSR","6:2":"HPSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"HPSDR","3:3":"HPSDR","4:3":"HDPSR","5:3":"DHPSR","6:3":"PHSDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HDPSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PHDSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"HDPSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"HDPSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HDPSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRSP","6:9":"HRSPD","7:9":"HRSPD","8:9":"PRHSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHRDS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HRPSD","4:11":"HRPSD","5:11":"HDRSP","6:11":"HRSPD","7:11":"HRSPD","8:11":"RPHSD","9:11":"SPRHD","10:11":"SPRHD"}},"6S":{"hard":{"5:2":"HSRD","6:2":"HSRD","7:2":"HSDR","8:2":"HDSR","9:2":"HDSR","10:2":"DHSR","11:2":"DHSR","12:2":"HSRD","13:2":"SHRD","14:2":"SHRD","15:2":"SHRD","16:2":"SHRD","17:2":"SRHD","5:3":"HSRD","6:3":"HSDR","7:3":"HSDR","8:3":"HDSR","9:3":"DHSR","10:3":"DHSR","11:3":"DHSR","12:3":"HSDR","13:3":"SHRD","14:3":"SHRD","15:3":"SHRD","16:3":"SHRD","17:3":"SRHD","5:4":"HSDR","6:4":"HSDR","7:4":"HSDR","8:4":"HDSR","9:4":"DHSR","10:4":"DHSR","11:4":"DHSR","12:4":"SHDR","13:4":"SHRD","14:4":"SHRD","15:4":"SHRD","16:4":"SHRD","17:4":"SRHD","5:5":"HSDR","6:5":"HSDR","7:5":"HSDR","8:5":"HDSR","9:5":"DHSR","10:5":"DHSR","11:5":"DHSR","12:5":"SHDR","13:5":"SHRD","14:5":"SHRD","15:5":"SHRD","16:5":"SHRD","17:5":"SRHD","5:6":"HSDR","6:6":"HSDR","7:6":"HDSR","8:6":"HDSR","9:6":"DHSR","10:6":"DHSR","11:6":"DHSR","12:6":"SHDR","13:6":"SHDR","14:6":"SHRD","15:6":"SHRD","16:6":"SHRD","17:6":"SRHD","5:7":"HSRD","6:7":"HSRD","7:7":"HSRD","8:7":"HDSR","9:7":"HDSR","10:7":"DHSR","11:7":"DHSR","12:7":"HSRD","13:7":"HSRD","14:7":"HSRD","15:7":"HSRD","16:7":"HSRD","17:7":"SHRD","5:8":"HRSD","6:8":"HRSD","7:8":"HRSD","8:8":"HDRS","9:8":"HDRS","10:8":"DHRS","11:8":"DHRS","12:8":"HRSD","13:8":"HRSD","14:8":"HRSD","15:8":"HRSD","16:8":"HRSD","17:8":"SRHD","5:9":"HRSD","6:9":"HRSD","7:9":"HRSD","8:9":"HRSD","9:9":"HDRS","10:9":"DHRS","11:9":"DHRS","12:9":"HRSD","13:9":"HRSD","14:9":"HRSD","15:9":"HRSD","16:9":"RHSD","17:9":"SRHD","5:10":"HRSD","6:10":"HRSD","7:10":"HRSD","8:10":"HRSD","9:10":"HDRS","10:10":"HDRS","11:10":"DHRS","12:10":"HRSD","13:10":"HRSD","14:10":"HRSD","15:10":"RHSD","16:10":"RHSD","17:10":"SRHD","5:11":"HRSD","6:11":"HRSD","7:11":"HRSD","8:11":"HRSD","9:11":"HDRS","10:11":"HDRS","11:11":"HDRS","12:11":"HRSD","13:11":"HRSD","14:11":"HRSD","15:11":"HRSD","16:11":"RHSD","17:11":"SRHD"},"soft":{"13:2":"HDSR","14:2":"HDSR","15:2":"HDSR","16:2":"HDSR","17:2":"HDSR","18:2":"SDHR","19:2":"SDHR","20:2":"SDHR","13:3":"HDSR","14:3":"HDSR","15:3":"HDSR","16:3":"HDSR","17:3":"DHSR","18:3":"DSHR","19:3":"SDHR","20:3":"SDHR","13:4":"HDSR","14:4":"HDSR","15:4":"DHSR","16:4":"DHSR","17:4":"DHSR","18:4":"DSHR","19:4":"SDHR","20:4":"SDHR","13:5":"DHSR","14:5":"DHSR","15:5":"DHSR","16:5":"DHSR","17:5":"DHSR","18:5":"DSHR","19:5":"SDHR","20:5":"SDHR","13:6":"DHSR","14:6":"DHSR","15:6":"DHSR","16:6":"DHSR","17:6":"DHSR","18:6":"DSHR","19:6":"SDHR","20:6":"SDHR","13:7":"HDSR","14:7":"HDSR","15:7":"HDSR","16:7":"HDSR","17:7":"HDSR","18:7":"SDHR","19:7":"SDHR","20:7":"SDHR","13:8":"HDRS","14:8":"HDRS","15:8":"HDRS","16:8":"HDRS","17:8":"HDSR","18:8":"SHDR","19:8":"SDHR","20:8":"SDHR","13:9":"HDRS","14:9":"HDRS","15:9":"HDRS","16:9":"HDRS","17:9":"HDSR","18:9":"HSDR","19:9":"SHDR","20:9":"SDHR","13:10":"HRDS","14:10":"HRDS","15:10":"HRDS","16:10":"HRDS","17:10":"HSDR","18:10":"HSDR","19:10":"SHDR","20:10":"SHDR","13:11":"HRDS","14:11":"HRDS","15:11":"HRDS","16:11":"HRDS","17:11":"HSRD","18:11":"HSDR","19:11":"SHDR","20:11":"SHDR"},"pairD":{"11:2":"PHDSR","2:2":"PHSRD","3:2":"PHSRD","4:2":"HPDSR","5:2":"DHPSR","6:2":"PHSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"PHSRD","3:3":"PHSDR","4:3":"HPDSR","5:3":"DHPSR","6:3":"PHSDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HPDSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PHDSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"PHDSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"PHDSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HPDSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRPS","6:9":"HRSPD","7:9":"HRSPD","8:9":"PRHSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHRDS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HPRSD","4:11":"HRPSD","5:11":"HDRPS","6:11":"HRPSD","7:11":"HRPSD","8:11":"PRHSD","9:11":"SPRHD","10:11":"SPRHD"},"pairN":{"11:2":"PHDSR","2:2":"HPSRD","3:2":"HPSRD","4:2":"HDPSR","5:2":"DHPSR","6:2":"HPSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"HPSRD","3:3":"HPSDR","4:3":"HDPSR","5:3":"DHPSR","6:3":"PHSDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HDPSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PHDSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"HDPSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"HDPSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HDPSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRSP","6:9":"HRSPD","7:9":"HRSPD","8:9":"PRHSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHRDS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HPRSD","4:11":"HRPSD","5:11":"HDRPS","6:11":"HRPSD","7:11":"HRPSD","8:11":"PRHSD","9:11":"SPRHD","10:11":"SPRHD"}},"8H":{"hard":{"5:2":"HSRD","6:2":"HSRD","7:2":"HSDR","8:2":"HDSR","9:2":"HDSR","10:2":"DHSR","11:2":"DHSR","12:2":"HSRD","13:2":"SHRD","14:2":"SHRD","15:2":"SHRD","16:2":"SHRD","17:2":"SRHD","5:3":"HSDR","6:3":"HSDR","7:3":"HSDR","8:3":"HDSR","9:3":"DHSR","10:3":"DHSR","11:3":"DHSR","12:3":"HSDR","13:3":"SHRD","14:3":"SHRD","15:3":"SHRD","16:3":"SHRD","17:3":"SRHD","5:4":"HSDR","6:4":"HSDR","7:4":"HSDR","8:4":"HDSR","9:4":"DHSR","10:4":"DHSR","11:4":"DHSR","12:4":"SHDR","13:4":"SHRD","14:4":"SHRD","15:4":"SHRD","16:4":"SHRD","17:4":"SRHD","5:5":"HSDR","6:5":"HSDR","7:5":"HSDR","8:5":"HDSR","9:5":"DHSR","10:5":"DHSR","11:5":"DHSR","12:5":"SHDR","13:5":"SHRD","14:5":"SHRD","15:5":"SHRD","16:5":"SHRD","17:5":"SRHD","5:6":"HSDR","6:6":"HSDR","7:6":"HDSR","8:6":"HDSR","9:6":"DHSR","10:6":"DHSR","11:6":"DHSR","12:6":"SHDR","13:6":"SHDR","14:6":"SHRD","15:6":"SHRD","16:6":"SHRD","17:6":"SRHD","5:7":"HSRD","6:7":"HSRD","7:7":"HSRD","8:7":"HDSR","9:7":"HDSR","10:7":"DHSR","11:7":"DHSR","12:7":"HSRD","13:7":"HSRD","14:7":"HSRD","15:7":"HSRD","16:7":"HSRD","17:7":"SHRD","5:8":"HRSD","6:8":"HRSD","7:8":"HRSD","8:8":"HDRS","9:8":"HDRS","10:8":"DHRS","11:8":"DHRS","12:8":"HRSD","13:8":"HRSD","14:8":"HRSD","15:8":"HRSD","16:8":"HRSD","17:8":"SRHD","5:9":"HRSD","6:9":"HRSD","7:9":"HRSD","8:9":"HRSD","9:9":"HDRS","10:9":"DHRS","11:9":"DHRS","12:9":"HRSD","13:9":"HRSD","14:9":"HRSD","15:9":"HRSD","16:9":"RHSD","17:9":"SRHD","5:10":"HRSD","6:10":"HRSD","7:10":"HRSD","8:10":"HRSD","9:10":"HDRS","10:10":"HDRS","11:10":"DHRS","12:10":"HRSD","13:10":"HRSD","14:10":"HRSD","15:10":"RHSD","16:10":"RHSD","17:10":"SRHD","5:11":"HRSD","6:11":"HRSD","7:11":"HRSD","8:11":"HRSD","9:11":"HDRS","10:11":"HDRS","11:11":"DHRS","12:11":"HRSD","13:11":"HRSD","14:11":"HRSD","15:11":"RHSD","16:11":"RHSD","17:11":"RSHD"},"soft":{"13:2":"HDSR","14:2":"HDSR","15:2":"HDSR","16:2":"HDSR","17:2":"HDSR","18:2":"DSHR","19:2":"SDHR","20:2":"SDHR","13:3":"HDSR","14:3":"HDSR","15:3":"HDSR","16:3":"HDSR","17:3":"DHSR","18:3":"DSHR","19:3":"SDHR","20:3":"SDHR","13:4":"HDSR","14:4":"HDSR","15:4":"DHSR","16:4":"DHSR","17:4":"DHSR","18:4":"DSHR","19:4":"SDHR","20:4":"SDHR","13:5":"DHSR","14:5":"DHSR","15:5":"DHSR","16:5":"DHSR","17:5":"DHSR","18:5":"DSHR","19:5":"SDHR","20:5":"SDHR","13:6":"DHSR","14:6":"DHSR","15:6":"DHSR","16:6":"DHSR","17:6":"DHSR","18:6":"DSHR","19:6":"DSHR","20:6":"SDHR","13:7":"HDSR","14:7":"HDSR","15:7":"HDSR","16:7":"HDSR","17:7":"HDSR","18:7":"SDHR","19:7":"SDHR","20:7":"SDHR","13:8":"HDRS","14:8":"HDRS","15:8":"HDRS","16:8":"HDRS","17:8":"HDSR","18:8":"SHDR","19:8":"SDHR","20:8":"SDHR","13:9":"HDRS","14:9":"HDRS","15:9":"HDRS","16:9":"HDRS","17:9":"HDSR","18:9":"HSDR","19:9":"SHDR","20:9":"SDHR","13:10":"HRDS","14:10":"HRDS","15:10":"HRDS","16:10":"HRDS","17:10":"HSDR","18:10":"HSDR","19:10":"SHDR","20:10":"SHDR","13:11":"HRDS","14:11":"HRDS","15:11":"HRDS","16:11":"HRDS","17:11":"HRSD","18:11":"HSDR","19:11":"SHDR","20:11":"SHDR"},"pairD":{"11:2":"PHDSR","2:2":"PHSRD","3:2":"PHSRD","4:2":"HPDSR","5:2":"DHPSR","6:2":"PHSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"PHSDR","3:3":"PHSDR","4:3":"HPDSR","5:3":"DHPSR","6:3":"PHSDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HPDSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PHDSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"PHDSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"PHDSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HPDSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRPS","6:9":"HRSPD","7:9":"HRSPD","8:9":"PRHSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHRDS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HRPSD","4:11":"HRPSD","5:11":"HDRSP","6:11":"HRSPD","7:11":"HRSPD","8:11":"RPHSD","9:11":"SPRHD","10:11":"SPRHD"},"pairN":{"11:2":"PHDSR","2:2":"HPSRD","3:2":"HPSRD","4:2":"HDPSR","5:2":"DHPSR","6:2":"HPSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"HPSDR","3:3":"HPSDR","4:3":"HDPSR","5:3":"DHPSR","6:3":"PHSDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HDPSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PHDSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"HDPSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"HDPSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HDPSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRPS","6:9":"HRSPD","7:9":"HRSPD","8:9":"PRHSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHRDS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HRPSD","4:11":"HRPSD","5:11":"HDRSP","6:11":"HRSPD","7:11":"HRSPD","8:11":"RPHSD","9:11":"SPRHD","10:11":"SPRHD"}},"8S":{"hard":{"5:2":"HSRD","6:2":"HSRD","7:2":"HSDR","8:2":"HDSR","9:2":"HDSR","10:2":"DHSR","11:2":"DHSR","12:2":"HSRD","13:2":"SHRD","14:2":"SHRD","15:2":"SHRD","16:2":"SHRD","17:2":"SRHD","5:3":"HSRD","6:3":"HSDR","7:3":"HSDR","8:3":"HDSR","9:3":"DHSR","10:3":"DHSR","11:3":"DHSR","12:3":"HSDR","13:3":"SHRD","14:3":"SHRD","15:3":"SHRD","16:3":"SHRD","17:3":"SRHD","5:4":"HSDR","6:4":"HSDR","7:4":"HSDR","8:4":"HDSR","9:4":"DHSR","10:4":"DHSR","11:4":"DHSR","12:4":"SHDR","13:4":"SHRD","14:4":"SHRD","15:4":"SHRD","16:4":"SHRD","17:4":"SRHD","5:5":"HSDR","6:5":"HSDR","7:5":"HSDR","8:5":"HDSR","9:5":"DHSR","10:5":"DHSR","11:5":"DHSR","12:5":"SHDR","13:5":"SHRD","14:5":"SHRD","15:5":"SHRD","16:5":"SHRD","17:5":"SRHD","5:6":"HSDR","6:6":"HSDR","7:6":"HDSR","8:6":"HDSR","9:6":"DHSR","10:6":"DHSR","11:6":"DHSR","12:6":"SHDR","13:6":"SHDR","14:6":"SHRD","15:6":"SHRD","16:6":"SHRD","17:6":"SRHD","5:7":"HSRD","6:7":"HSRD","7:7":"HSRD","8:7":"HDSR","9:7":"HDSR","10:7":"DHSR","11:7":"DHSR","12:7":"HSRD","13:7":"HSRD","14:7":"HSRD","15:7":"HSRD","16:7":"HSRD","17:7":"SHRD","5:8":"HRSD","6:8":"HRSD","7:8":"HRSD","8:8":"HDRS","9:8":"HDRS","10:8":"DHRS","11:8":"DHRS","12:8":"HRSD","13:8":"HRSD","14:8":"HRSD","15:8":"HRSD","16:8":"HRSD","17:8":"SRHD","5:9":"HRSD","6:9":"HRSD","7:9":"HRSD","8:9":"HRSD","9:9":"HDRS","10:9":"DHRS","11:9":"DHRS","12:9":"HRSD","13:9":"HRSD","14:9":"HRSD","15:9":"HRSD","16:9":"RHSD","17:9":"SRHD","5:10":"HRSD","6:10":"HRSD","7:10":"HRSD","8:10":"HRSD","9:10":"HDRS","10:10":"HDRS","11:10":"DHRS","12:10":"HRSD","13:10":"HRSD","14:10":"HRSD","15:10":"RHSD","16:10":"RHSD","17:10":"SRHD","5:11":"HRSD","6:11":"HRSD","7:11":"HRSD","8:11":"HRSD","9:11":"HDRS","10:11":"HDRS","11:11":"HDRS","12:11":"HRSD","13:11":"HRSD","14:11":"HRSD","15:11":"HRSD","16:11":"RHSD","17:11":"SRHD"},"soft":{"13:2":"HDSR","14:2":"HDSR","15:2":"HDSR","16:2":"HDSR","17:2":"HDSR","18:2":"SDHR","19:2":"SDHR","20:2":"SDHR","13:3":"HDSR","14:3":"HDSR","15:3":"HDSR","16:3":"HDSR","17:3":"DHSR","18:3":"DSHR","19:3":"SDHR","20:3":"SDHR","13:4":"HDSR","14:4":"HDSR","15:4":"DHSR","16:4":"DHSR","17:4":"DHSR","18:4":"DSHR","19:4":"SDHR","20:4":"SDHR","13:5":"DHSR","14:5":"DHSR","15:5":"DHSR","16:5":"DHSR","17:5":"DHSR","18:5":"DSHR","19:5":"SDHR","20:5":"SDHR","13:6":"DHSR","14:6":"DHSR","15:6":"DHSR","16:6":"DHSR","17:6":"DHSR","18:6":"DSHR","19:6":"SDHR","20:6":"SDHR","13:7":"HDSR","14:7":"HDSR","15:7":"HDSR","16:7":"HDSR","17:7":"HDSR","18:7":"SDHR","19:7":"SDHR","20:7":"SDHR","13:8":"HDRS","14:8":"HDRS","15:8":"HDRS","16:8":"HDRS","17:8":"HDSR","18:8":"SHDR","19:8":"SDHR","20:8":"SDHR","13:9":"HDRS","14:9":"HDRS","15:9":"HDRS","16:9":"HDRS","17:9":"HDSR","18:9":"HSDR","19:9":"SHDR","20:9":"SDHR","13:10":"HRDS","14:10":"HRDS","15:10":"HRDS","16:10":"HRDS","17:10":"HSDR","18:10":"HSDR","19:10":"SHDR","20:10":"SHDR","13:11":"HRDS","14:11":"HRDS","15:11":"HRDS","16:11":"HRDS","17:11":"HSRD","18:11":"HSDR","19:11":"SHDR","20:11":"SHDR"},"pairD":{"11:2":"PHDSR","2:2":"PHSRD","3:2":"PHSRD","4:2":"HPDSR","5:2":"DHPSR","6:2":"PHSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"PHSRD","3:3":"PHSDR","4:3":"HPDSR","5:3":"DHPSR","6:3":"PHSDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HPDSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PHDSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"PHDSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"PHDSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HPDSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRPS","6:9":"HRSPD","7:9":"HRSPD","8:9":"PRHSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHRDS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HPRSD","4:11":"HRPSD","5:11":"HDRPS","6:11":"HRPSD","7:11":"HRPSD","8:11":"PRHSD","9:11":"SPRHD","10:11":"SPRHD"},"pairN":{"11:2":"PHDSR","2:2":"HPSRD","3:2":"HPSRD","4:2":"HDPSR","5:2":"DHPSR","6:2":"HPSRD","7:2":"PSHRD","8:2":"PSHRD","9:2":"PSRHD","10:2":"SPRHD","11:3":"PHDSR","2:3":"HPSRD","3:3":"HPSDR","4:3":"HDPSR","5:3":"DHPSR","6:3":"PHSDR","7:3":"PSHRD","8:3":"PSHRD","9:3":"PSRHD","10:3":"SPRHD","11:4":"PHDSR","2:4":"PHSDR","3:4":"PHSDR","4:4":"HDPSR","5:4":"DHPSR","6:4":"PSHDR","7:4":"PSHRD","8:4":"PSHRD","9:4":"PSRHD","10:4":"SPRHD","11:5":"PHDSR","2:5":"PHSDR","3:5":"PHSDR","4:5":"HDPSR","5:5":"DHPSR","6:5":"PSHDR","7:5":"PSHRD","8:5":"PSHRD","9:5":"PSRHD","10:5":"SPRHD","11:6":"PDHSR","2:6":"PHSDR","3:6":"PHSDR","4:6":"HDPSR","5:6":"DHPSR","6:6":"PSHDR","7:6":"PSHRD","8:6":"PSHRD","9:6":"PSRHD","10:6":"SPRHD","11:7":"PHDSR","2:7":"PHSRD","3:7":"PHSRD","4:7":"HDPSR","5:7":"DHPSR","6:7":"HPSRD","7:7":"PHSRD","8:7":"PHSRD","9:7":"SPRHD","10:7":"SPRHD","11:8":"PHDRS","2:8":"HPRSD","3:8":"HPRSD","4:8":"HPDRS","5:8":"DHPRS","6:8":"HPRSD","7:8":"HPRSD","8:8":"PHRSD","9:8":"PSRHD","10:8":"SPRHD","11:9":"PHDRS","2:9":"HPRSD","3:9":"HPRSD","4:9":"HPRSD","5:9":"DHRPS","6:9":"HRSPD","7:9":"HRSPD","8:9":"PRHSD","9:9":"PSRHD","10:9":"SPRHD","11:10":"PHRDS","2:10":"HPRSD","3:10":"HRPSD","4:10":"HRSPD","5:10":"HDRSP","6:10":"HRSPD","7:10":"HRSPD","8:10":"PRHSD","9:10":"SPRHD","10:10":"SPRHD","11:11":"PHRDS","2:11":"HPRSD","3:11":"HPRSD","4:11":"HRPSD","5:11":"HDRPS","6:11":"HRPSD","7:11":"HRPSD","8:11":"PRHSD","9:11":"SPRHD","10:11":"SPRHD"}}};
+function nextRand(g){let a=g.rs|0;a=a+0x6D2B79F5|0;g.rs=a;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}
+let RNG=Math.random; // points at the current game's own shuffle stream
+const rnd=n=>Math.floor(RNG()*n);
+
+function newDecks(){const d=[];for(let k=0;k<DECKS;k++)for(const s of SUITS)for(const r of RANKS)d.push({r,s});return d;}
+// Wash: brand-new decks get spread on the table and scrambled.
+function wash(d){d=d.slice();for(let i=d.length-1;i>0;i--){const j=rnd(i+1);[d[i],d[j]]=[d[j],d[i]];}return d;}
+// Riffle: split near the middle, cards fall in small clumps from each half.
+function riffle(d){
+  const mid=Math.round(d.length/2+(RNG()*10-5));
+  const L=d.slice(0,mid),R=d.slice(mid),out=[];
+  while(L.length&&R.length){
+    const src=RNG()<L.length/(L.length+R.length)?L:R;
+    let n=1+rnd(3); while(n--&&src.length) out.push(src.shift());
+  }
+  return out.concat(L,R);
+}
+// Strip: pull small packets off the top, stacking each on the last (reverses packet order).
+function strip(d){let out=[],i=0;while(i<d.length){const n=5+rnd(8);out=d.slice(i,i+n).concat(out);i+=n;}return out;}
+// Cut: player cuts somewhere not too close to either end.
+function cut(d){const c=10+rnd(d.length-19);return d.slice(c).concat(d.slice(0,c));}
+function casinoShuffle(stack){return cut(riffle(strip(riffle(riffle(stack)))));}
+
+function cardVal(c){return c.r==='A'?11:(c.r==='10'||c.r==='J'||c.r==='Q'||c.r==='K')?10:+c.r;}
+function handScore(cs){let t=0,a=0;for(const c of cs){t+=cardVal(c);if(c.r==='A')a++;}while(t>21&&a){t-=10;a--;}return{t,soft:a>0};}
+function isNatural(h){return !h.split&&h.cards.length===2&&handScore(h.cards).t===21;}
+function dealerBJ(cs){return cs.length===2&&handScore(cs).t===21;}
+
+function createGame(bank,seed){return{rs:(seed??(Math.random()*4294967296))>>>0,bank,shoe:[],burn:[],discard:[],reshuffleAt:31,dealer:[],hands:[],cur:0,phase:'idle',insBet:0,right:0,total:0,msg:'',shuffledThisRound:false};}
+
+function shuffleShoe(g,fresh){
+  RNG=()=>nextRand(g);
+  const stack=fresh?wash(newDecks()):[...g.discard,...g.burn,...g.shoe];
+  g.shoe=casinoShuffle(stack);
+  g.burn=[g.shoe.shift()];
+  g.discard=[];
+  g.reshuffleAt=Math.round(TOTAL*(1-PENETRATION))+rnd(5)-2;
+  g.shuffledThisRound=true;
+}
+function draw(g){
+  RNG=()=>nextRand(g);
+  if(!g.shoe.length){g.shoe=casinoShuffle([...g.discard,...g.burn]);g.discard=[];g.burn=[];}
+  return g.shoe.shift();
+}
+
+function upVal(g){return cardVal(g.dealer[0]);}
+const lockedAces=h=>h.aceSplit&&!RULES.hsa; // split aces get one card unless hitting split aces is allowed
+function canHit(g,h){return !lockedAces(h);}
+function canDouble(g,h){
+  if(h.cards.length!==2||lockedAces(h)||g.bank<h.bet||(h.split&&!RULES.das))return false;
+  const t=handScore(h.cards).t;
+  return RULES.dbl==='any'||(RULES.dbl==='9-11'&&t>=9&&t<=11)||(RULES.dbl==='10-11'&&(t===10||t===11));
+}
+function canSurrender(g,h){return RULES.sur&&h.cards.length===2&&!h.split;}
+function canSplit(g,h){
+  if(h.cards.length!==2||cardVal(h.cards[0])!==cardVal(h.cards[1])||g.bank<h.bet)return false;
+  const n=g.hands.filter(x=>(x.spot??1)===(h.spot??1)).length; // hands on this spot
+  if(h.cards[0].r==='A')return n<Math.min(RULES.maxHands,2+RULES.rsa); // aces: limited re-splits
+  return n<RULES.maxHands;
+}
+
+// Basic strategy for the current table rules.
+function stratOrder(h,up){
+  const T=STRAT[RULES.decks+(RULES.h17?'H':'S')], sc=handScore(h.cards), t=sc.t;
+  if(h.cards.length===2&&cardVal(h.cards[0])===cardVal(h.cards[1]))return(RULES.das?T.pairD:T.pairN)[cardVal(h.cards[0])+':'+up];
+  if(t>=21||(!sc.soft&&t>=18))return'S';
+  if(sc.soft)return t>=13?T.soft[t+':'+up]:'HS';
+  return T.hard[Math.max(5,t)+':'+up];
+}
+function book(g,h){
+  if(lockedAces(h))return canSplit(g,h)?'P':'S';
+  for(const a of stratOrder(h,upVal(g))){
+    if(a==='S')return'S';
+    if(a==='H'&&canHit(g,h))return'H';
+    if(a==='D'&&canDouble(g,h))return'D';
+    if(a==='R'&&canSurrender(g,h))return'R';
+    if(a==='P'&&canSplit(g,h))return'P';
+  }
+  return'S';
+}
+
+// bets: a number (one hand on the middle spot) or [left, middle, right]
+function betError(g,b){
+  const arr=Array.isArray(b)?b:[0,b,0], act=arr.filter(v=>v>0);
+  if(!act.length)return'Place a bet first.';
+  if(act.some(v=>v<MIN_BET||v%5))return'Each spot needs at least $25, in $5 chips.';
+  if(act.reduce((a,v)=>a+v,0)>g.bank)return'Not enough in your bankroll for those bets.';
+  return null;
+}
+function startRound(g,b){
+  if(g.phase==='play'||g.phase==='ins')return'Finish the hand first.';
+  const err=betError(g,b);if(err)return err;
+  const arr=Array.isArray(b)?b:[0,b,0];
+  g.discard.push(...g.dealer,...g.hands.flatMap(h=>h.cards));
+  g.dealer=[];g.hands=[];g.shuffledThisRound=false;
+  if(g.shoe.length<=g.reshuffleAt&&!g.follower)shuffleShoe(g,false);
+  g.insBet=0;g.cur=0;g.msg='';
+  // right spot is "first base": dealt and played first, then middle, then left
+  for(const i of [2,1,0])if(arr[i]>0){g.bank-=arr[i];g.hands.push({cards:[],bet:arr[i],spot:i,split:false,aceSplit:false,doubled:false,done:false,result:''});}
+  for(const h of g.hands)h.cards.push(draw(g));
+  g.dealer.push(draw(g));
+  for(const h of g.hands)h.cards.push(draw(g));
+  g.dealer.push(draw(g));
+  if(g.dealer[0].r==='A'){g.phase='ins';g.msg='Dealer shows an ace. Insurance?';return null;}
+  peek(g);return null;
+}
+function takeInsurance(g,take){
+  if(take){const ib=g.hands.reduce((a,h)=>a+h.bet,0)/2;if(g.bank>=ib){g.bank-=ib;g.insBet=ib;}}
+  peek(g);
+}
+function peek(g){
+  g.msg='';
+  if(upVal(g)>=10&&dealerBJ(g.dealer)){
+    let m='Dealer has blackjack.';
+    if(g.insBet){g.bank+=g.insBet*3;m+=' Insurance pays 2:1.';}
+    let pushed=false;
+    for(const h of g.hands){if(isNatural(h)){g.bank+=h.bet;h.result='push';pushed=true;}else h.result='lose';h.done=true;}
+    if(pushed)m+=' Your blackjack pushes.';
+    g.phase='over';g.msg=m;return;
+  }
+  if(g.insBet)g.msg='No dealer blackjack. Insurance loses. ';
+  let bj=false;
+  for(const h of g.hands)if(isNatural(h)){g.bank+=h.bet*(1+RULES.bj);h.result='blackjack';h.done=true;bj=true;}
+  if(bj)g.msg+=`Blackjack! Paid ${RULES.bj===1.2?'6:5':RULES.bj===2?'2:1':'3:2'}. `;
+  if(g.hands.every(h=>h.done)){g.phase='over';return;}
+  g.phase='play';g.cur=0;
+  while(g.hands[g.cur].done)g.cur++;
+}
+function applyAction(g,a){
+  const h=g.hands[g.cur];
+  if(a==='H'){h.cards.push(draw(g));if(handScore(h.cards).t>=21)h.done=true;}
+  else if(a==='S'){h.done=true;}
+  else if(a==='R'){g.bank+=h.bet/2;h.result='surrender';h.done=true;}
+  else if(a==='D'){g.bank-=h.bet;h.bet*=2;h.doubled=true;h.cards.push(draw(g));h.done=true;}
+  else if(a==='P'){
+    const aces=h.cards[0].r==='A';
+    g.bank-=h.bet;
+    const nh={cards:[h.cards.pop()],bet:h.bet,spot:h.spot,split:true,aceSplit:aces,doubled:false,done:false,result:''};
+    h.split=true;h.aceSplit=aces;
+    g.hands.splice(g.cur+1,0,nh);
+    h.cards.push(draw(g)); // second hand gets its card only when you get to it, like a real dealer
+  }
+  advance(g);
+}
+function advance(g){
+  while(g.cur<g.hands.length){
+    const h=g.hands[g.cur];
+    if(h.cards.length===1)h.cards.push(draw(g));
+    if(lockedAces(h)&&!canSplit(g,h))h.done=true; // split aces: one card only
+    if(!h.done)break;
+    g.cur++;
+  }
+  if(g.cur>=g.hands.length)dealerPlay(g);
+}
+function dealerPlay(g){
+  g.phase='over';
+  const live=g.hands.some(h=>h.result!=='blackjack'&&h.result!=='surrender'&&handScore(h.cards).t<=21);
+  if(live){for(;;){const s=handScore(g.dealer);if(s.t<17||(s.t===17&&s.soft&&RULES.h17))g.dealer.push(draw(g));else break;}}
+  const dt=handScore(g.dealer).t;
+  for(const h of g.hands){
+    if(h.result==='blackjack'||h.result==='surrender')continue;
+    const pt=handScore(h.cards).t;
+    if(pt>21)h.result='bust';
+    else if(dt>21||pt>dt){g.bank+=h.bet*2;h.result='win';}
+    else if(pt===dt){g.bank+=h.bet;h.result='push';}
+    else h.result='lose';
+  }
+  g.msg=!live?(g.hands.some(h=>h.result==='bust')?'You busted.':g.hands.some(h=>h.result==='surrender')?'You surrendered half your bet.':''):(dt>21?`Dealer busts with ${dt}.`:`Dealer stays on ${dt}.`);
+}
+// The Book: plays a whole round instantly, perfect basic strategy, never insurance.
+function autoPlayRound(g,bet){
+  const b=Math.min(bet,Math.floor(g.bank/MIN_BET)*MIN_BET);
+  if(b<MIN_BET)return false;
+  startRound(g,b);
+  if(g.phase==='ins')takeInsurance(g,false);
+  while(g.phase==='play')applyAction(g,book(g,g.hands[g.cur]));
+  return true;
+}
+function sameShoe(a,b){if(a.shoe.length!==b.shoe.length)return false;for(let i=0;i<a.shoe.length;i++)if(a.shoe[i].r!==b.shoe[i].r||a.shoe[i].s!==b.shoe[i].s)return false;return true;}
+function seenCards(g){
+  const hide=g.phase==='play'||g.phase==='ins';
+  return[...g.discard,...g.hands.flatMap(h=>h.cards),...g.dealer.filter((c,i)=>!(hide&&i===1))];
+}
+</script>
+<script>
+// ===================== UI =====================
+const $=id=>document.getElementById(id);
+const NAME={H:'Hit',S:'Stay',D:'Double',P:'Split',R:'Surrender'};
+const DENOMS=[{v:500,c:'#6a1b9a'},{v:100,c:'#151515'},{v:25,c:'#1e8e3e'},{v:5,c:'#c62828'},{v:1,c:'#eeeeee',t:'#222'},{v:0.5,c:'#f48fb1',t:'#222'}];
+const T={deal:480,hit:480,flip:700,draw:800}; // table-speed pacing (ms)
+let g,bk,BETS=[0,25,0],sel=1,round=0,prevCounts={},prevHide=true;
+const SPOTNAME=['Left','Middle','Right'];
+const totBet=()=>BETS.reduce((a,v)=>a+v,0);
+const betsOK=()=>!betError(g,BETS);
+let S={},LOG=[],asked=false,dealerSay='',shuffleNote='';
+let vis={d:0,hole:true,h:[]},busy=false,shownBank=0;
+let autoTimer=null,autoLeft=0;
+let opts={mine:false,dealer:true,gest:true},vsDrawn=false;
+try{Object.assign(opts,JSON.parse(localStorage.getItem('bjOpts2')||'{}'));}catch(e){}
+let cutOut=0, banner='', bannerClass='', bannerT=null; // cutOut: 0 none, 1 cut card out this hand
+
+function newSession(start,bookBet){
+  const seed=Math.random()*4294967296>>>0;
+  g=createGame(start,seed); bk=createGame(start,seed); bk.follower=true;   // same seed = same shuffles for you and the Book
+  shuffleShoe(g,true); shuffleShoe(bk,true);
+  BETS=[0,bookBet,0];sel=1; round++; shownBank=start; vis={d:0,hole:true,h:[]};
+  S={results:{},bankBefore:0,start,bookBet,hand:0,firstDev:0,bookBroke:0,meBroke:0,times:[],dealT:0,bookLast:''};
+  LOG=[];asked=false;dealerSay='';shuffleNote='';cancelAuto();
+  if(typeof UNDO!=='undefined'){UNDO=[];undoUsed=false;animTok++;}
+  g.msg='New decks washed and shuffled. Place your bet and deal.';
+}
+
+$('tray').innerHTML=['#f48fb1','#eeeeee','#c62828','#c62828','#1e8e3e','#1e8e3e','#151515','#151515','#6a1b9a']
+  .map(c=>`<div class="tube" style="--c:${c}"></div>`).join('');
+
+function money(n){return'$'+(Number.isInteger(n)?n:n.toFixed(2));}
+function label(c){return c.r==='A'?'ace':['J','Q','K','10'].includes(c.r)?'10':c.r;}
+function situation(h){
+  const s=handScore(h.cards),up=label(g.dealer[0]);
+  if(h.cards.length===2&&cardVal(h.cards[0])===cardVal(h.cards[1]))return`pair of ${label(h.cards[0])}s vs dealer ${up}`;
+  return`${s.soft&&s.t<21?'soft':'hard'} ${s.t} vs dealer ${up}`;
+}
+
+// ---------- drawing helpers ----------
+function chipsFor(amount){
+  const out=[];let a=Math.round(amount*2)/2;
+  for(const d of DENOMS){while(a>=d.v-1e-9){out.push(d);a=Math.round((a-d.v)*2)/2;}}
+  return out;
+}
+function stackHTML(amount,max=12){
+  if(!amount)return'';
+  const chips=chipsFor(amount).slice(0,max);
+  const h=46+(chips.length-1)*5;
+  return`<div class="stack" style="height:${h}px">`+chips.map((d,i)=>
+    `<div class="chip" style="--c:${d.c};${d.t?'--t:'+d.t+';':''}bottom:${i*5}px" data-v="${d.v<1?'½':d.v}"></div>`).join('')+'</div>';
+}
+function cardHTML(c,hidden,isNew){
+  if(hidden)return`<div class="card back${isNew?' new':''}"></div>`;
+  const red=c.s==='♥'||c.s==='♦';
+  return`<div class="card${red?' red':''}${isNew?' new':''}"><div class="tl">${c.r}<small>${c.s}</small></div><div class="mid">${c.s}</div></div>`;
+}
+function cardsHTML(key,cards,hideIdx,forceNewIdx){
+  const k=round+':'+key, p=prevCounts[k]||0;
+  prevCounts[k]=cards.length;
+  return cards.map((c,i)=>cardHTML(c,i===hideIdx,i>=p||i===forceNewIdx)).join('');
+}
+function railHTML(amount){
+  const groups=[];
+  for(const d of DENOMS){let n=0;while(amount>=d.v-1e-9&&n<200){n++;amount=Math.round((amount-d.v)*2)/2;}if(n)groups.push({d,n});}
+  if(!groups.length)return'<div class="rlabel">No chips</div>';
+  return groups.map(({d,n})=>`<div class="rstack"><div class="rlabel">${n}×${d.v<1?'½':d.v}</div>`+
+    Array.from({length:Math.min(n,12)},()=>`<div class="rchip" style="--c:${d.c}"></div>`).join('')+'</div>').join('');
+}
+
+// ---------- decisions (tracked quietly) ----------
+function record(sit,mine,bk_){
+  const hh=g.hands[g.phase==='ins'?0:g.cur];
+  LOG.push({spot:new Set(g.hands.map(x=>x.spot??1)).size>1?SPOTNAME[hh.spot??1]:'',undo:undoUsed,shoe:S.shoe||1,hand:S.hand,sit,mine,book:bk_,asked,sub:(()=>{const same=g.hands.filter(x=>(x.spot??1)===(hh.spot??1));return same.length>1?same.indexOf(hh)+1:0;})(),cards:hh.cards.map(c=>c.r+c.s),up:g.dealer[0].r+g.dealer[0].s});
+  g.total++; if(mine===bk_)g.right++;
+  asked=false; dealerSay=''; undoUsed=false;
+}
+let UNDO=[],undoUsed=false,animTok=0;
+function snap(){UNDO.push(JSON.stringify({g,bk,S,LOG,cutOut,shuffleNote,banner,bannerClass}));if(UNDO.length>40)UNDO.shift();}
+function undo(){
+  if(!UNDO.length)return;
+  cancelAuto();animTok++;busy=false;clearTimeout(bannerT);
+  const d=JSON.parse(UNDO.pop());
+  g=d.g;bk=d.bk;S=d.S;LOG=d.LOG;cutOut=d.cutOut;shuffleNote=d.shuffleNote;banner=d.banner;bannerClass=d.bannerClass;
+  vis={d:g.dealer.length,hole:g.phase==='play'||g.phase==='ins',h:g.hands.map(h=>h.cards.length)};
+  prevHide=vis.hole;dealerSay='';asked=false;undoUsed=true;vsDrawn=false;shownBank=g.bank;
+  g.msg='Undone. Make your play again.';
+  render();
+}
+function stopTimer(){if(S.dealT){S.times.push((performance.now()-S.dealT)/1000);S.dealT=0;}}
+function decide(a){
+  if(busy||g.phase!=='play')return;
+  const i=g.cur,h=g.hands[i],b=book(g,h);
+  if((a==='D'&&!canDouble(g,h))||(a==='P'&&!canSplit(g,h))||(a==='H'&&!canHit(g,h))||(a==='R'&&!canSurrender(g,h)))return;
+  snap();
+  record(situation(h),NAME[a],NAME[b]);
+  if(a!==b){if(!S.firstDev)S.firstDev=S.hand;S.lastDev=S.hand;}
+  applyAction(g,a);
+  if(a==='P'){vis.h.splice(i+1,0,1);vis.h[i]=1;} // split: the second card moves over, new cards come one at a time
+  if(g.phase!=='play')stopTimer();
+  animate(false);
+}
+function decideIns(take){
+  if(busy||g.phase!=='ins')return;
+  snap();
+  record(`insurance, dealer showing ace${isNatural(g.hands[0])?' (you have blackjack)':''}`,take?'Take insurance':'No insurance','No insurance');
+  takeInsurance(g,take);
+  if(g.phase!=='play')stopTimer();
+  animate(false);
+}
+function askDealer(){
+  if(busy)return;
+  if(g.phase==='ins')dealerSay='Book says: never take insurance.';
+  else if(g.phase==='play'){
+    const h=g.hands[g.cur], now=book(g,h), ideal=book({...g,bank:1e9},h);
+    if(ideal!==now)dealerSay=`Book says ${NAME[ideal].toUpperCase()} on ${situation(h)}, but you need ${money(h.bet)} more to ${NAME[ideal].toLowerCase()}. With the chips you have: ${NAME[now].toUpperCase()}.`;
+    else dealerSay=`Book says ${NAME[now].toUpperCase()} on ${situation(h)}.`;
+  }
+  else return;
+  asked=true;render();
+}
+function mc(code){const red=/[♥♦]/.test(code);return`<span class="mc${red?' r':''}">${code}</span>`;}
+function mcs(list){return(list||[]).map(mc).join('');}
+let repShowAll=false;
+function reportHTML(rows,title,allHands){
+  rows=rows.map(r=>({...r,mine:r.mine==='Stand'?'Stay':r.mine,book:r.book==='Stand'?'Stay':r.book}));
+  const right=rows.filter(r=>r.mine===r.book).length;
+  const pct=rows.length?Math.round(100*right/rows.length):0;
+  // group decisions by hand
+  const byHand=new Map();
+  for(const r of rows){if(!byHand.has(r.hand))byHand.set(r.hand,[]);byHand.get(r.hand).push(r);}
+  for(const hn of (allHands||[]))if(!byHand.has(hn))byHand.set(hn,[]);
+  const hands=[...byHand.entries()].sort((a,b)=>b[0]-a[0]); // newest hand first
+  const shoeOf=e=>(e[1][0]&&e[1][0].shoe)||(S.results[e[0]]||{}).shoe||1;
+  const bad=hands.filter(([,rs])=>rs.some(r=>r.mine!==r.book)), good=hands.filter(([,rs])=>rs.every(r=>r.mine===r.book));
+  const decided=hands.filter(([,rs])=>rs.length).length;
+  const block=([hand,rs])=>{
+    const ok=rs.every(r=>r.mine===r.book), res=S.results[hand]||{};
+    let why='';
+    if(!rs.length&&res.final){const f=res.final[0],d=res.dealer;
+      why=f.c.length===2&&f.t===21&&!res.splits?(d.c.length===2&&d.t===21?'both had blackjack':'you had blackjack'):(d.c.length===2&&d.t===21?'dealer had blackjack':'');}
+    const noDec=rs.length?'':`<div class="rep-line"><b>–</b><span>No decision this hand${why?`: ${why}`:''}</span></div>`;
+    const lines=noDec+rs.map(r=>{const k=r.mine===r.book;
+      const ask=(r.asked?' · asked dealer':'')+(r.undo?' · used undo':'');
+      const cardsLine=r.cards?`<div class="rep-cards">${mcs(r.cards)}<span class="vsx">vs</span>${mc(r.up)}</div>`:'';
+      if(r.mine==='Split'||r.book==='Split'){
+        const verdict=r.mine==='Split'?(k?'Split was right':'Split was wrong: book says '+r.book):'Should have split: you '+r.mine;
+        return`<div class="rep-line ${k?'ok':'no'} split"><b>${k?'✓':'✗'}</b><span>${cardsLine}${r.spot?`<em class="tag sub">${r.spot} spot</em>`:''}<em class="tag">SPLIT</em>${r.sub?`Hand ${r.sub}, `:''}${r.sit}: ${verdict}${ask}</span></div>`;
+      }
+      const where=(r.spot?`<em class="tag sub">${r.spot} spot</em>`:'')+(r.sub?`<em class="tag sub">Split hand ${r.sub}</em>`:'');
+      return`<div class="rep-line ${k?'ok':'no'}"><b>${k?'✓':'✗'}</b><span>${cardsLine}${where}${r.sit}: you ${r.mine}${k?'':` · book ${r.book}`}${ask}</span></div>`;}).join('');
+    const fin=res.final?`<div class="rep-final">Final: you ${res.final.map(f=>`${mcs(f.c)} <b>${f.t>21?'bust':f.t}</b>`).join(' <span class="vsx">|</span> ')} · dealer ${mcs(res.dealer.c)} <b>${res.dealer.t>21?'bust':res.dealer.t}</b></div>`:'';
+    const splitTag=(res.spots>1?` <em class="tag sub">${res.spots} SPOTS</em>`:'')+(res.splits?` <em class="tag">SPLIT</em>`:'');
+    const cnt=(S.counts||{})[hand], sh=shoeOf([hand,rs]);
+    const countLine=!cnt?'':deckDone(sh)?`<div class="rep-count">Count going in: running <b>${fmtCount(cnt.rc)}</b> · true <b>${fmtTC(cnt.tc)}</b> <span>(${cnt.decks.toFixed(1)} decks left)</span></div>`:`<div class="rep-count hidden">Count hidden until this deck is done</div>`;
+    return`<div class="rep-hand ${ok?'good':'bad'}"><div class="rep-hh"><span>Hand ${hand}${res.up?` · dealer showed ${res.up}`:''}${splitTag}</span><span class="${res.net>0?'up':res.net<0?'down':''}">${res.text||''}</span></div>${countLine}${lines}${fin}</div>`;
+  };
+  let h=`<h3>${title}</h3><div class="rep-sum">${right} of ${rows.length} decisions by the book${rows.length?` · ${pct}%`:''} · ${hands.length} hand${hands.length===1?'':'s'}</div>`;
+  const withDividers=list=>{let out='',last=null;
+    for(const e of list){const sh=shoeOf(e);
+      if(sh!==last){const n=hands.filter(x=>shoeOf(x)===sh).map(x=>x[0]);
+        const end=(S.deckEnd||{})[sh];
+        out+=`<div class="shoe-div"><span>Deck ${sh}${sh>1?' · new shuffle':''} · hands ${Math.min(...n)}–${Math.max(...n)}${deckDone(sh)&&end!==undefined?` · ended at ${fmtCount(end)}`:''}</span></div>`;last=sh;}
+      out+=block(e);}
+    return out;};
+  if(bad.length)h+=`<div class="rep-h">Hands with a mistake (${bad.length})</div>`+withDividers(bad);
+  const LIM=25, goodShown=repShowAll?good:good.slice(0,LIM);
+  if(good.length)h+=`<div class="rep-h">Played by the book${good.length>decided-bad.length?' or no decision':''} (${good.length})</div>`+withDividers(goodShown)
+    +(good.length>goodShown.length?`<button class="sessbtn" id="repMore">Show ${good.length-goodShown.length} older hands</button>`:'');
+  if(!hands.length)h+='<div class="small">No hands yet.</div>';
+  return h;
+}
+let repWhich='session';
+function showReport(which,keepAll){
+  cancelAuto();repWhich=which;if(!keepAll)repShowAll=false;
+  const sh=S.shoe||1;
+  const rows=which==='hand'?LOG.filter(r=>r.hand===S.hand):which==='deck'?LOG.filter(r=>(r.shoe||1)===sh):LOG;
+  const title=which==='hand'?`Hand ${S.hand} report`:which==='deck'?`Deck ${sh} report`:'Session report';
+  const fin=Object.keys(S.results||{}).map(Number);
+  const shoeOfHand=hn=>(S.results[hn]||{}).shoe||(LOG.find(r=>r.hand===hn)||{}).shoe||1;
+  const all=which==='hand'?fin.filter(hn=>hn===S.hand):which==='deck'?fin.filter(hn=>shoeOfHand(hn)===sh):fin;
+  $('sheetBody').innerHTML=reportHTML(rows,title,all)+(which==='deck'?`<button class="sessbtn" id="fullFromDeck">See the full session report</button>`:'');
+  $('sheet').hidden=false;
+}
+
+// ---------- Hi-Lo count (tracked silently, shown only after a deck is finished) ----------
+function hilo(cards){let n=0;for(const c of cards){const v=cardVal(c);if(v>=2&&v<=6)n++;else if(v>=10)n--;}return n;}
+function fmtCount(n){return(n>0?'+':n<0?'−':'')+Math.abs(n);}
+function fmtTC(x){const r=Math.round(x*10)/10;return(r>0?'+':r<0?'−':'')+Math.abs(r).toFixed(1);}
+function deckDone(sh){const cur=S.shoe||1;return sh<cur||(sh===cur&&cutOut===1&&g.phase!=='play'&&g.phase!=='ins');}
+
+// ---------- dealing at table speed ----------
+function animate(initial){
+  const t={d:g.dealer.length,hole:g.phase==='play'||g.phase==='ins',h:g.hands.map(h=>h.cards.length)};
+  const P=[];let d=vis.d;const h=vis.h.slice();
+  if(initial){
+    for(let i=0;i<g.hands.length;i++){const ii=i;P.push({ms:T.deal,f:()=>{vis.h[ii]=1}});}
+    P.push({ms:T.deal,f:()=>{vis.d=1}});
+    for(let i=0;i<g.hands.length;i++){const ii=i;P.push({ms:T.deal,f:()=>{vis.h[ii]=2}});h[ii]=2;}
+    P.push({ms:T.deal,f:()=>{vis.d=2}});
+    d=2;
+  }
+  for(let i=0;i<t.h.length;i++)for(let n=(h[i]||0)+1;n<=t.h[i];n++){const ii=i,nn=n;P.push({ms:T.hit,f:()=>{vis.h[ii]=nn}});}
+  if(vis.hole&&!t.hole&&t.d>=2)P.push({ms:T.flip,f:()=>{vis.hole=false}});
+  for(let n=d+1;n<=t.d;n++){const nn=n;P.push({ms:T.draw,f:()=>{vis.d=nn}});}
+  busy=true;render();
+  const tok=++animTok;let k=0;
+  (function step(){
+    if(tok!==animTok)return;
+    if(k>=P.length){busy=false;shownBank=g.bank;render();animDone();return;}
+    const s=P[k++];setTimeout(()=>{if(tok!==animTok)return;s.f();render();step();},s.ms);
+  })();
+}
+function showBanner(html,cls,ms){
+  banner=html;bannerClass=cls||'';clearTimeout(bannerT);
+  if(ms)bannerT=setTimeout(()=>{banner='';render();},ms);
+  render();
+}
+function animDone(){
+  if(g.phase==='over'&&S.hand&&!S.results[S.hand]){
+    const net=g.bank-S.bankBefore, up=g.dealer[0]?(g.dealer[0].r==='A'?'A':cardVal(g.dealer[0])):'';
+    const rs=g.hands.map(h=>h.result).join(', ');
+    S.results[S.hand]={spots:new Set(g.hands.map(h=>h.spot??1)).size,shoe:S.shoe||1,final:g.hands.map(h=>({c:h.cards.map(c=>c.r+c.s),t:handScore(h.cards).t})),dealer:{c:g.dealer.map(c=>c.r+c.s),t:handScore(g.dealer).t},splits:g.hands.some(h=>h.split)?g.hands.filter(h=>h.split).length:0,net,up,text:`${rs.charAt(0).toUpperCase()+rs.slice(1)} · ${net>0?'+':net<0?'−':''}${money(Math.abs(net))}`};
+  }
+  if(g.phase==='over'&&S.hand>0)setTimeout(()=>{if(g.phase==='over'&&!busy&&!autoTimer&&cutOut!==1)startAuto();},0); // auto-deal only after you've dealt yourself
+  if(!cutOut&&g.shoe.length<=g.reshuffleAt){cutOut=1;showBanner('✂ Cut card is out<small>This is the last hand before the shuffle.</small>','',2600);}
+  if(g.phase==='over'&&cutOut===1){
+    S.deckEnd=S.deckEnd||{};
+    S.deckEnd[S.shoe||1]=hilo([...g.discard,...g.dealer,...g.hands.flatMap(h=>h.cards)]);
+    const n=LOG.filter(r=>(r.shoe||1)===(S.shoe||1)).length;
+    showBanner(`New deck coming<small>The dealer shuffles before the next hand.</small>${n?`<button id="deckRepBtn">See this deck's results</button>`:''}`,'',0);
+  }
+}
+function startAuto(){
+  cancelAuto();
+  if(!betsOK())return;
+  autoLeft=5;render();
+  autoTimer=setInterval(()=>{autoLeft--;if(autoLeft<=0){cancelAuto();deal();}else render();},1000);
+}
+function cancelAuto(){if(autoTimer){clearInterval(autoTimer);autoTimer=null;}if(autoLeft){autoLeft=0;if($('right'))render();}}
+
+function deal(){
+  cancelAuto();
+  if(busy)return;
+  const before=g.bank;
+  // the dealer shuffles before this hand: you and the Book both get the same new deck
+  let reshuffled=false;
+  if(betsOK()&&g.shoe.length<=g.reshuffleAt){
+    g.discard.push(...g.dealer,...g.hands.flatMap(h=>h.cards));g.dealer=[];g.hands=[];
+    shuffleShoe(g,false);reshuffled=true;
+    bk.dealer=[];bk.hands=[];bk.discard=[];
+    bk.shoe=g.shoe.map(c=>({...c}));bk.burn=g.burn.map(c=>({...c}));bk.reshuffleAt=g.reshuffleAt;
+  }
+  // count going into this hand = every card seen so far in this deck
+  const seenPrev=reshuffled?[]:[...g.discard,...g.dealer,...g.hands.flatMap(h=>h.cards)];
+  const rcIn=hilo(seenPrev), decksLeft=Math.max(0.25,(TOTAL-seenPrev.length)/52);
+  const err=startRound(g,BETS.slice());
+  if(!err){S.counts=S.counts||{};S.counts[S.hand+1]={rc:rcIn,tc:rcIn/decksLeft,decks:decksLeft};}
+  if(reshuffled)g.shuffledThisRound=true;
+  if(err){g.msg=err;render();return;}
+  round++;dealerSay='';asked=false;
+  UNDO=[];undoUsed=false;
+  S.hand++;S.dealT=performance.now();S.bankBefore=before;
+  S.shoe=(S.shoe||1)+(g.shuffledThisRound?1:0);
+  if(g.shuffledThisRound)S.lastShuf=S.hand; // hand timer starts when you press Deal
+  shuffleNote=g.shuffledThisRound?'Cut card came out. Dealer reshuffled (riffle, riffle, strip, riffle, cut, burn). ':'';
+  if(!S.bookBroke){
+    const b0=bk.bank;
+    if(autoPlayRound(bk,S.bookBet))S.bookLast=summarize(bk,b0);
+    else{S.bookBroke=S.hand;S.bookLast='';}
+  }
+  shownBank=before-totBet(); vis={d:0,hole:true,h:g.hands.map(()=>0)};
+  if(g.hands.length>1)S.lastMulti=S.hand;
+  if(g.shuffledThisRound){
+    cutOut=0;busy=true;
+    const steps=['Riffle','Riffle','Strip','Riffle','Cut','Burn one'],myRound=round;let i=0;
+    (function tick(){
+      if(myRound!==round)return;
+      if(i>=steps.length){banner='';animate(true);return;}
+      showBanner(`Shuffling…<small>${steps.slice(0,i+1).join(' · ')}</small>`,'shuf',0);i++;
+      setTimeout(tick,i===steps.length?700:520);
+    })();
+    return;
+  }
+  banner='';
+  animate(true);
+}
+function clearFelt(){
+  if(g.phase!=='over')return;
+  UNDO=[];
+  if(cutOut!==1)banner='';
+  g.discard.push(...g.dealer,...g.hands.flatMap(h=>h.cards));g.dealer=[];g.hands=[];g.phase='idle';g.msg='';shuffleNote='';
+  vis={d:0,hole:true,h:[]};
+}
+
+// ---------- You vs the Book ----------
+function cardsText(cs){return cs.map(c=>c.r+c.s).join(' ');}
+function summarize(x,before){
+  const hs=x.hands.map(h=>`${cardsText(h.cards)} (${handScore(h.cards).t>21?'bust':handScore(h.cards).t})`).join(' | ');
+  const dt=handScore(x.dealer).t, net=x.bank-before;
+  return`${hs} vs dealer ${cardsText(x.dealer)} (${dt>21?'bust':dt}) · ${net>0?'+':net<0?'−':''}${money(Math.abs(net))}`;
+}
+function netHTML(v){const n=v-S.start;return`<span class="${n>0?'up':n<0?'down':''}">${n>0?'+':n<0?'−':''}${money(Math.abs(n))}</span>`;}
+function renderVs(){
+  if(busy||((g.phase==='play'||g.phase==='ins')&&vsDrawn))return; // no spoilers mid-hand
+  vsDrawn=true;
+  if(g.bank<MIN_BET&&!S.meBroke&&S.hand)S.meBroke=S.hand;
+  if(bk.bank<MIN_BET&&!S.bookBroke&&S.hand)S.bookBroke=S.hand;
+  $('vsSub').textContent=`Same decks, starting ${money(S.start)}, Book bets ${money(S.bookBet)} flat and plays perfectly · Hand ${S.hand}`;
+  $('vsMe').textContent=money(g.bank); $('vsMeNet').innerHTML=netHTML(g.bank);
+  $('vsBook').textContent=money(bk.bank); $('vsBookNet').innerHTML=netHTML(bk.bank);
+  let d;
+  if(S.meBroke&&S.bookBroke)d=`You went broke on hand ${S.meBroke}, the Book on hand ${S.bookBroke}. ${S.meBroke>S.bookBroke?'You lasted longer.':S.meBroke<S.bookBroke?'The Book lasted longer.':'Same hand.'}`;
+  else if(S.meBroke)d=`You went broke on hand ${S.meBroke}. The Book is still alive with ${money(bk.bank)}.`;
+  else if(S.bookBroke)d=`The Book went broke on hand ${S.bookBroke}. You're still going.`;
+  else{const diff=g.bank-bk.bank;d=!S.hand?'Deal to start.':diff>0?`You're ahead of the Book by ${money(diff)}.`:diff<0?`You're behind the Book by ${money(-diff)}.`:"You're even with the Book.";}
+  $('vsDiff').textContent=d;
+  const lastDev=Math.max(S.lastDev||S.firstDev||0,S.lastMulti||0), why=(S.lastMulti||0)>(S.lastDev||S.firstDev||0)?'played more than one spot':'left the book';
+  $('vsCards').textContent=!S.hand?'':!lastDev?'No plays off the book yet, so you and the Book have seen the exact same cards.'
+    :(S.lastShuf&&S.lastShuf>lastDev)?`Back in sync: since the shuffle on hand ${S.lastShuf}, you and the Book are getting the same cards.`
+    :`You ${why} on hand ${lastDev}, so your cards and the Book's go different ways until the next shuffle. Then you both get the same new deck.`;
+  $('vsLast').textContent=S.bookLast?`Book's last hand: ${S.bookLast}`:'';
+  const n=S.times.length, avg=n?S.times.reduce((a,b)=>a+b,0)/n:0;
+  $('vsTime').textContent=n?`Average time per hand: ${avg.toFixed(1)}s over ${n} hand${n>1?'s':''} you played (last: ${S.times[n-1].toFixed(1)}s)`:'';
+}
+
+// ---------- render ----------
+function mode(){return g.phase==='play'?'play':g.phase==='ins'?'ins':'bet';}
+function render(){
+  renderVs();
+  saveSession();
+  const hide=vis.hole;
+  const dCards=g.dealer.slice(0,vis.d);
+  const flip=prevHide&&!hide&&dCards.length>1?1:-1;
+  $('dealer').innerHTML=cardsHTML('d',dCards,hide?1:-1,flip);
+  prevHide=hide;
+  $('dtot').textContent=!dCards.length||!opts.dealer?'':hide?`Showing ${dCards[0].r==='A'?'A':cardVal(dCards[0])}`:`${handScore(dCards).t}`;
+
+  const inHand=g.hands.length&&g.phase!=='idle';
+  if(!inHand){
+    $('spots').innerHTML=[0,1,2].map(i=>`<div class="spot bet${i===sel?' sel':''}"><div class="circle${BETS[i]?'':' empty'}" data-spot="${i}">${BETS[i]?stackHTML(BETS[i]):'<span class="plus">+</span>'}</div><div class="betlabel">${BETS[i]?money(BETS[i]):'Tap to bet'}</div><div class="cardrow"><div class="cards"></div></div></div>`).join('');
+  }else{
+    $('spots').classList.toggle('multi',g.hands.length>1&&g.phase!=='idle');
+    const order=g.hands.map((h,i)=>i).sort((a,b)=>((g.hands[a].spot??1)-(g.hands[b].spot??1))||(a-b));
+    const cols=order.map(i=>({spot:g.hands[i].spot??1,i}));
+    // after a hand, keep the empty circles on the felt so you can add a spot for the next hand
+    if(g.phase==='over'&&!busy)for(const sp of [0,1,2])if(!cols.some(c=>c.spot===sp))cols.push({spot:sp,i:-1});
+    cols.sort((a,b)=>(a.spot-b.spot)||(a.i-b.i));
+    $('spots').innerHTML=cols.map(({spot,i})=>{
+      if(i<0)return`<div class="spot bet"><div class="circle empty" data-spot="${spot}"><span class="plus">+</span></div><div class="betlabel">Tap to bet</div><div class="cardrow"><div class="cards"></div></div></div>`;
+      const h=g.hands[i];
+      const cs=h.cards.slice(0,vis.h[i]??0), s=handScore(cs);
+      const tot=cs.length?(s.soft&&s.t<21?'soft ':'')+s.t:'';
+      const badge=!busy&&h.result?`<span class="badge b-${h.result}">${h.result==='blackjack'?'BJ':h.result}</span>`:'';
+      const active=!busy&&g.phase==='play'&&i===g.cur&&g.hands.length>1;
+      return`<div class="spot${active?' active':''}"><div class="circle" data-spot="${h.spot??1}">${stackHTML(h.bet)}</div>
+        <div class="betlabel">${money(h.bet)}${h.doubled?' · doubled':''}</div>
+        <div class="cardrow"><div class="cards">${cardsHTML('h'+i,cs,-1,-1)}</div>
+        <div class="hinfo">${tot&&opts.mine?`<span class="total">${tot}</span>`:''}${badge}</div></div></div>`;
+    }).join('');
+  }
+  $('insChip').innerHTML=g.insBet&&inHand?stackHTML(g.insBet):'';
+
+  const bankShow=busy?shownBank:g.bank;
+  $('rail').innerHTML=railHTML(bankShow);
+  $('bank').textContent=money(bankShow);
+  $('handNo').textContent=S.hand;
+  $('left').textContent=`${g.shoe.length} left in deck`;
+  const until=g.shoe.length-g.reshuffleAt;
+  $('untilShuf').textContent=until>0?`${until} card${until===1?'':'s'}`:'Next hand';
+  $('say').hidden=!dealerSay; $('say').textContent=dealerSay;
+  $('cutBanner').hidden=!banner; $('cutBanner').innerHTML=banner; $('cutBanner').className=bannerClass;
+  if(!busy&&g.bank<MIN_BET&&g.phase!=='play'&&g.phase!=='ins'&&!/Out of chips/.test(g.msg))g.msg+=(g.msg?' ':'')+'Out of chips. Tap Start over.';
+  $('msg').textContent=busy?shuffleNote:(shuffleNote+g.msg);
+  {const n=BETS.filter(v=>v).length;$('betAmt').textContent=money(totBet());$('betLbl').textContent=n>1?`YOUR BETS · ${n} SPOTS`:'YOUR BET';}
+  $('undo1').disabled=$('undo2').disabled=!UNDO.length;
+
+  // bottom bar: same two big buttons, they change job with the phase
+  const m=mode(), h=m==='play'?g.hands[g.cur]:null;
+  $('barBet').hidden=m!=='bet';$('barPlay').hidden=m!=='play';$('barIns').hidden=m!=='ins';
+  const L=$('leftBtn'),R=$('right');
+  L.className='';R.className='';
+  const gp=m==='play'&&opts.gest;
+  $('gestPad').hidden=!gp;L.hidden=gp;R.hidden=gp;
+  $('gestPad').classList.toggle('off',busy);
+  if(m==='play'){
+    L.textContent='STAY';L.classList.add('b-stand');R.textContent='HIT';R.classList.add('b-hit');
+    L.disabled=busy;R.disabled=busy||!canHit(g,h);
+    $('dbl').disabled=busy||!canDouble(g,h);$('split').disabled=busy||!canSplit(g,h);$('ask').disabled=busy;
+    $('sur').hidden=!RULES.sur;$('sur').disabled=busy||!canSurrender(g,h);$('ask').textContent=RULES.sur?'Ask':'Ask dealer';
+  }else if(m==='ins'){
+    L.textContent='NO INSURANCE';L.classList.add('b-plain');R.textContent='INSURANCE';R.classList.add('b-gold');
+    L.disabled=busy;R.disabled=busy||g.bank<g.hands.reduce((a,h)=>a+h.bet,0)/2;$('askIns').disabled=busy;
+  }else{
+    const handRows=LOG.some(r=>r.hand===S.hand);
+    const deckEnd=g.phase==='over'&&cutOut===1&&LOG.some(r=>(r.shoe||1)===(S.shoe||1));
+    L.textContent=deckEnd?'Deck report':handRows&&g.phase==='over'?'Hand report':'Session report';L.classList.add('b-plain');
+    L.disabled=busy||!LOG.length;
+    R.textContent=autoLeft?`DEAL · ${autoLeft}`:'DEAL';R.classList.add('b-deal');
+    if(!busy&&(g.phase==='over'||g.phase==='idle')&&totBet()>g.bank){ // can't cover these bets: drop side spots, then trim the middle
+      BETS[0]=BETS[2]=0;BETS[1]=Math.min(BETS[1]||25,Math.floor(g.bank/5)*5);if(BETS[1]<MIN_BET)BETS[1]=0;sel=1;}
+    R.disabled=busy||!betsOK();
+  }
+
+  // remaining-card chart (only what you've actually seen)
+  const seen=[...g.discard,...g.hands.flatMap((h,i)=>h.cards.slice(0,vis.h[i]??0)),...dCards.filter((c,i)=>!(hide&&i===1))],cnt={};
+  for(const c of seen){const k=c.r+c.s;cnt[k]=(cnt[k]||0)+1;}
+  let html='<tr><th></th>'+RANKS.map(r=>`<th>${r}</th>`).join('')+'</tr>';
+  for(const s of SUITS){
+    const red=s==='♥'||s==='♦';
+    html+=`<tr><th class="${red?'red-s':''}">${s}</th>`+RANKS.map(r=>{const n=DECKS-(cnt[r+s]||0);return`<td class="${n?'':'z'}">${n}</td>`;}).join('')+'</tr>';
+  }
+  html+='<tr><th>All</th>'+RANKS.map(r=>`<td><b>${SUITS.reduce((a,s)=>a+DECKS-(cnt[r+s]||0),0)}</b></td>`).join('')+'</tr>';
+  $('remain').innerHTML=html;
+  const tens=['10','J','Q','K'].reduce((a,r)=>a+SUITS.reduce((b,s)=>b+DECKS-(cnt[r+s]||0),0),0);
+  const aces=SUITS.reduce((a,s)=>a+DECKS-(cnt['A'+s]||0),0);
+  $('leftSummary').textContent=`${TOTAL-seen.length} unseen`;
+  $('tensAces').textContent=`Ten-value cards left: ${tens} of ${16*DECKS} · Aces left: ${aces} of ${4*DECKS} · Reshuffle when about ${g.reshuffleAt} cards remain`;
+}
+
+// ---------- basic strategy chart (built from the same book() the trainer grades with) ----------
+function chartCode(cards,up,allowSplit){ // the chart letter for a two-card hand under the current rules
+  const order=stratOrder({cards},up), t=handScore(cards).t;
+  const dblOK=RULES.dbl==='any'||(RULES.dbl==='9-11'&&t>=9&&t<=11)||(RULES.dbl==='10-11'&&(t===10||t===11));
+  const ok=a=>a==='S'||a==='H'||(a==='D'&&dblOK)||(a==='R'&&RULES.sur)||(a==='P'&&allowSplit);
+  const first=[...order].find(ok)||'S';
+  if(first==='D'){const f=[...order].find(a=>a==='H'||a==='S');return f==='S'?'Ds':'D';}
+  if(first==='R'){const f=[...order].find(a=>a==='H'||a==='S'||(a==='P'&&allowSplit));return f==='S'?'Rs':f==='P'?'Rp':'R';}
+  return first;
+}
+function rulesText(){
+  const r=RULES;
+  return[`${r.decks} deck${r.decks>1?'s':''}`,`dealer ${r.h17?'hits':'stays on'} soft 17`,`blackjack pays ${r.bj===1.2?'6:5':'3:2'}`,
+    r.dbl==='any'?'double any two cards':`double on ${r.dbl==='9-11'?'9, 10, 11':'10, 11'} only`,r.das?'double after split':'no double after split',
+    r.sur?'late surrender':'no surrender',['aces split once','aces re-split once','aces re-split to 4'][r.rsa]+(r.hsa?', split aces can hit':', one card on split aces'),
+    `up to ${r.maxHands} hands from splits`,`${Math.round(r.pen*100)}% dealt before the shuffle`].join(' · ');
+}
+// ---------- My Book: your own editable strategy ----------
+const UPS=[2,3,4,5,6,7,8,9,10,11], PAIR_ROWS=[2,3,4,5,6,7,8,9,10,11];
+const CC=r=>({r,s:'♠'});
+function hardCards(t){return t<=11?[CC('2'),CC(String(t-2))]:[CC('10'),CC(String(t-10))];}
+function pairCards(v){const r=v===11?'A':String(v);return[CC(r),CC(r)];}
+function defaultBook(){
+  const m={ins:false};
+  for(const u of UPS){
+    for(let t=5;t<=17;t++)m[`h:${t}:${u}`]=chartCode(hardCards(t),u,false);
+    for(let t=13;t<=20;t++)m[`s:${t}:${u}`]=chartCode([CC('A'),CC(String(t-11))],u,false);
+    for(const v of PAIR_ROWS)m[`p:${v}:${u}`]=chartCode(pairCards(v),u,true);
+  }
+  return m;
+}
+let BOOK0=null, MY=null;
+function loadMyBook(){
+  BOOK0=defaultBook();let d=null;
+  try{
+    d=JSON.parse(localStorage.getItem('bjMyBook2')||'null');
+    if(!d){ // older save held the whole chart: keep only real edits (skip 4 cells the old default chart had wrong)
+      const old=JSON.parse(localStorage.getItem('bjMyBook')||'null');
+      if(old){d={ins:!!old.ins};const fixed=['h:8:5','h:8:6','p:7:8','s:14:4'];for(const k in old)if(k!=='ins'&&k in BOOK0&&old[k]!==BOOK0[k]&&!fixed.includes(k))d[k]=old[k];}
+    }
+  }catch(e){d=null;}
+  MY={...BOOK0,...(d||{})};
+}
+function saveMyBook(){const d={ins:!!MY.ins};for(const k in BOOK0)if(k!=='ins'&&MY[k]!==BOOK0[k])d[k]=MY[k];try{localStorage.setItem('bjMyBook2',JSON.stringify(d));}catch(e){}}
+function myChanges(){return Object.keys(BOOK0).filter(k=>MY[k]!==BOOK0[k]).length;}
+// play a hand the way My Book says
+function myPlay(x,h,M){
+  const up=cardVal(x.dealer[0]), sc=handScore(h.cards), t=sc.t;
+  const act=c=>c==='D'?(canDouble(x,h)?'D':'H'):c==='Ds'?(canDouble(x,h)?'D':'S'):c==='R'?(canSurrender(x,h)?'R':'H'):c==='Rs'?(canSurrender(x,h)?'R':'S'):c==='Rp'?(canSurrender(x,h)?'R':'H'):c==='P'?'H':c;
+  if(h.cards.length===2&&cardVal(h.cards[0])===cardVal(h.cards[1])){
+    const c=M[`p:${cardVal(h.cards[0])}:${up}`];
+    if(c==='P'||c==='Rp'){if(c==='Rp'&&canSurrender(x,h))return'R';if(canSplit(x,h))return'P';}
+    else if(!lockedAces(h))return act(c);
+  }
+  if(lockedAces(h)||t>=21)return'S';
+  let c;
+  if(sc.soft&&t>=13)c=M[`s:${t}:${up}`];
+  else if(sc.soft)c='H';
+  else c=M[`h:${Math.min(17,Math.max(5,t))}:${up}`];
+  return act(c);
+}
+
+// ---------- chart: The Book (read-only) and My Book (tap to edit) ----------
+let chartMode='book';
+function chartHTML(){
+  const mine=chartMode==='mine';
+  let cur=null;
+  if(g.phase==='play'&&!busy){
+    const h=g.hands[g.cur],sc=handScore(h.cards),up=cardVal(g.dealer[0]);
+    if(h.cards.length===2&&cardVal(h.cards[0])===cardVal(h.cards[1]))cur={sec:'p',row:cardVal(h.cards[0]),up};
+    else if(sc.soft&&sc.t<21&&sc.t>=13)cur={sec:'s',row:sc.t,up};
+    else cur={sec:'h',row:Math.min(17,Math.max(5,sc.t)),up};
+  }
+  const src=mine?MY:BOOK0;
+  const head='<tr><th></th>'+UPS.map(u=>`<th>${u===11?'A':u}</th>`).join('')+'</tr>';
+  const row=(sec,key,label)=>`<tr><th>${label}</th>`+UPS.map(u=>{
+    const k=`${sec}:${key}:${u}`, c=src[k], on=cur&&cur.sec===sec&&cur.row===key&&cur.up===u, chg=mine&&c!==BOOK0[k];
+    return`<td class="cc-${c}${on?' cur':''}${chg?' chg':''}"${mine?` data-k="${k}"`:''}>${c}</td>`;}).join('')+'</tr>';
+  let hard='',soft='',pairs='';
+  for(let t=5;t<=17;t++)hard+=row('h',t,t===17?'17+':t);
+  for(let t=13;t<=20;t++)soft+=row('s',t,`A,${t-11}`);
+  for(const v of PAIR_ROWS)pairs+=row('p',v,v===11?'A,A':`${v},${v}`);
+  const n=myChanges();
+  return`<div class="tabs"><button data-cm="book" class="${mine?'':'on'}">The Book</button><button data-cm="mine" class="${mine?'on':''}">My Book${n?` (${n})`:''}</button></div>
+  ${mine?`<div class="small"><b>Tap any square to change it</b> (H → S → D → Ds, P on pairs${RULES.sur?', R/Rs surrender':''}). Squares you've changed get a red corner. The trainer still grades you against The Book. My Book is for the simulator.</div>
+  <label class="tog"><span>My Book takes insurance</span><input type="checkbox" id="myIns" ${MY.ins?'checked':''}><i></i></label>`
+  :`<div class="small">${rulesText()}. Your hand down the side, dealer's up card across the top.${cur?' <b>Your current spot is outlined.</b>':''}</div>`}
+  <div class="legend"><span class="cc-H">H</span>Hit <span class="cc-S">S</span>Stay <span class="cc-D">D</span>Double, else hit <span class="cc-Ds">Ds</span>Double, else stay <span class="cc-P">P</span>Split${RULES.sur?' <span class="cc-R">R</span>Surrender, else hit <span class="cc-Rs">Rs</span>Surrender, else stay <span class="cc-Rp">Rp</span>Surrender, else split':''}</div>
+  <div class="rep-h">Hard totals</div><table class="chart${mine?' edit':''}">${head}${hard}</table>
+  <div class="rep-h">Soft totals (ace counted as 11)</div><table class="chart${mine?' edit':''}">${head}${soft}</table>
+  <div class="rep-h">Pairs</div><table class="chart${mine?' edit':''}">${head}${pairs}</table>
+  ${mine?`<div class="row2"><button id="myReset" class="sessbtn">Reset My Book to The Book</button><button id="mySim" class="simrun">Simulate My Book vs The Book</button></div>`
+  :`<div class="small" style="margin-top:8px">Never take insurance.${RULES.hsa?'':' Split aces get one card each.'}</div>`}`;
+}
+function showChart(){
+  cancelAuto();
+  if(g.phase==='play'&&!busy)asked=true; // peeking mid-hand counts as asking the dealer
+  $('sheetBody').innerHTML=chartHTML();$('sheet').hidden=false;
+}
+function rerenderChart(){const y=$('sheet').querySelector('.sheet-in').scrollTop;$('sheetBody').innerHTML=chartHTML();$('sheet').querySelector('.sheet-in').scrollTop=y;}
+function cycleCell(k){
+  const pair=k.startsWith('p:'), order=['H','S','D','Ds',...(pair?['P']:[]),...(RULES.sur?['R','Rs']:[]),...(pair&&RULES.sur?['Rp']:[])];
+  MY[k]=order[(order.indexOf(MY[k])+1)%order.length];saveMyBook();rerenderChart();
+}
+
+// ---------- simulator: The Book vs My Book, same shuffles, flat bets ----------
+let simTok=0, simLast=null, simView='compare';
+function simTrial(start,bet,games,R,seed,M,spots){
+  const x=createGame(start,seed);shuffleShoe(x,true);let bust=false;
+  for(let k=0;k<games;k++){
+    if(!bust){
+      do{
+        if(x.bank<bet){bust=true;break;}
+        const n=Math.min(spots||1,Math.floor(x.bank/bet)); // play as many spots as you can cover
+        const arr=n===1?[0,bet,0]:n===2?[0,bet,bet]:[bet,bet,bet];
+        startRound(x,arr);R.hands+=n;R.rounds++;
+        if(x.phase==='ins')takeInsurance(x,!!(M&&M.ins));
+        while(x.phase==='play'){const h=x.hands[x.cur];applyAction(x,M?myPlay(x,h,M):book(x,h));}
+      }while(x.shoe.length>x.reshuffleAt);
+      R.decks++;
+      if(x.bank<bet)bust=true;
+    }
+    const b=x.bank;
+    R.acc[k][bust?0:b<start?1:b===start?2:b<2*start?3:4]++;
+    R.sums[k]+=b;
+  }
+  R.net+=x.bank-start;
+}
+function newR(G){return{acc:Array.from({length:G},()=>[0,0,0,0,0]),sums:new Array(G).fill(0),hands:0,rounds:0,decks:0,net:0};}
+function simFormHTML(){
+  const sb=S.start||200,bb=S.bookBet||25,n=myChanges();
+  return`<h3>Simulator</h3>
+  <div class="small" style="margin-bottom:6px"><b>Table rules:</b> ${rulesText()}.</div>
+  <div class="small">Plays thousands of sessions with flat bets. A <b>game</b> is one deck, from shuffle to shuffle (about 13 rounds with one spot, fewer with more spots since each round uses more cards). ${n?`It runs <b>The Book</b> and <b>My Book</b> (${n} change${n>1?'s':''}) on the exact same shuffles so you can compare them.`:'My Book has no changes yet, so this runs The Book. Edit My Book from the Chart button to compare your own strategy.'}</div>
+  <div class="simform">
+    <label>Bankroll $<input id="simBank" type="number" min="25" step="25" value="${sb}"></label>
+    <label>Bet per hand $<input id="simBet" type="number" min="25" step="25" value="${bb}"></label>
+    <label>Spots played <select id="simSpots"><option value="1" selected>1 spot</option><option value="2">2 spots</option><option value="3">3 spots</option></select></label>
+    <label>Sessions <select id="simN"><option value="2000">2,000 (fast)</option><option value="10000" selected>10,000</option><option value="30000">30,000 (slow)</option></select></label>
+  </div>
+  <button id="simRun" class="simrun">Run simulation</button>
+  <div id="simOut"></div>`;
+}
+function showSim(){cancelAuto();simTok++;$('sheetBody').innerHTML=simFormHTML();$('sheet').hidden=false;$('sheet').querySelector('.sheet-in').scrollTop=0;}
+function runSim(){
+  const start=Math.max(25,Math.round((+$('simBank').value||200)/25)*25), bet=Math.max(25,Math.round((+$('simBet').value||25)/25)*25);
+  $('simBank').value=start;$('simBet').value=bet;
+  if(bet>start){$('simOut').innerHTML='<div class="small">Your bet can\'t be bigger than your bankroll.</div>';return;}
+  const N=+$('simN').value, G=20, tok=++simTok, both=myChanges()>0, M={...MY}, spots=+$('simSpots').value||1;
+  const RB=newR(G), RM=both?newR(G):null;
+  let done=0;$('simRun').disabled=true;
+  (function chunk(){
+    if(tok!==simTok)return;
+    const t0=performance.now();
+    while(done<N&&performance.now()-t0<40){
+      const seed=Math.random()*4294967296>>>0;
+      simTrial(start,bet,G,RB,seed,null,spots);
+      if(both)simTrial(start,bet,G,RM,seed,M,spots);
+      done++;
+    }
+    if(done<N){$('simOut').innerHTML=`<div class="simprog"><div style="width:${(100*done/N).toFixed(1)}%"></div></div><div class="small">Simulating… ${done.toLocaleString()} of ${N.toLocaleString()} sessions${both?' (×2 strategies)':''}</div>`;setTimeout(chunk,0);return;}
+    $('simRun').disabled=false;
+    simLast={start,bet,N,RB,RM,spots};simView=both?'compare':'book';
+    renderSimOut();
+  })();
+}
+function renderSimOut(){
+  const L=simLast;if(!L)return;
+  let tabs='';
+  if(L.RM)tabs=`<div class="tabs"><button data-sv="compare" class="${simView==='compare'?'on':''}">Compare</button><button data-sv="mine" class="${simView==='mine'?'on':''}">My Book</button><button data-sv="book" class="${simView==='book'?'on':''}">The Book</button></div>`;
+  const body=simView==='compare'&&L.RM?simCompareHTML(L):simResultsHTML(L.start,L.bet,L.N,simView==='mine'&&L.RM?L.RM:L.RB,simView==='mine'&&L.RM?'My Book':'The Book',L.spots);
+  $('simOut').innerHTML=tabs+body;
+}
+function per100(R,bet){return R.hands?R.net/R.hands*100:0;}
+function simCompareHTML(L){
+  const N=L.N,pct=v=>100*v/N,G=L.RB.acc.length;
+  const lastB=L.RB.acc[G-1],lastM=L.RM.acc[G-1];
+  const pb=per100(L.RB),pm=per100(L.RM),d=pm-pb;
+  const sgn=v=>(v>=0?'+':'−')+money(Math.abs(Math.round(v)));
+  let h=`<div class="simsum">${L.spots>1?`Playing <b>${L.spots} spots</b> of ${money(L.bet)}. `:''}On the same shuffles, My Book averages <b class="${d>=0?'up':'down'}">${sgn(d)}</b> per 100 hands compared with The Book (${sgn(pm)} vs ${sgn(pb)}).<br>
+  After 20 games: ahead <b>${pct(lastM[3]+lastM[4]).toFixed(0)}%</b> vs ${pct(lastB[3]+lastB[4]).toFixed(0)}%, lost it all <b>${pct(lastM[0]).toFixed(0)}%</b> vs ${pct(lastB[0]).toFixed(0)}%, doubled <b>${pct(lastM[4]).toFixed(0)}%</b> vs ${pct(lastB[4]).toFixed(0)}%.</div>
+  <div class="simleg"><span class="sw-b"></span>The Book <span class="sw-m"></span>My Book</div>
+  <table class="simtab cmp"><tr><th>Game</th><th>Ahead</th><th>Lost all</th><th>Doubled+</th><th>Avg bankroll</th></tr>`;
+  for(let k=0;k<G;k++){
+    const b=L.RB.acc[k],m=L.RM.acc[k];
+    const cell=(vb,vm,good)=>{const dd=vm-vb;return`<td><div class="vb">${vb.toFixed(1)}%</div><div class="vm ${Math.abs(dd)<0.5?'':(dd>0)===good?'up':'down'}">${vm.toFixed(1)}%</div></td>`;};
+    const ab=L.RB.sums[k]/N, am=L.RM.sums[k]/N;
+    h+=`<tr><td><b>${k+1}</b></td>${cell(pct(b[3]+b[4]),pct(m[3]+m[4]),true)}${cell(pct(b[0]),pct(m[0]),false)}${cell(pct(b[4]),pct(m[4]),true)}
+      <td><div class="vb">${money(Math.round(ab))}</div><div class="vm ${Math.abs(am-ab)<1?'':am>ab?'up':'down'}">${money(Math.round(am))}</div></td></tr>`;
+  }
+  return h+`</table><div class="small" style="margin-top:8px">Gray is The Book, gold is My Book, green or red shows whether yours did better or worse. Both strategies play the same ${N.toLocaleString()} starting shuffles. Small differences (under a point or two) can be luck, so run 30,000 sessions to be sure.</div>`;
+}
+function simResultsHTML(start,bet,N,R,name,spots){
+  spots=spots||1;const rpg=R.decks?R.rounds/R.decks:13;
+  const acc=R.acc,sums=R.sums;
+  const pct=v=>(100*v/N), f=v=>{const p=pct(v);return p<0.05&&v>0?'<0.1':p.toFixed(p<10?1:0);};
+  const last=acc[acc.length-1], up20=pct(last[3]+last[4]), bust20=pct(last[0]), dbl20=pct(last[4]);
+  const up1=pct(acc[0][3]+acc[0][4]), p1=per100(R);
+  let h=`<div class="simsum"><b>${name}</b> with <b>${money(start)}</b>, playing <b>${spots} spot${spots>1?'s':''}</b> of <b>${money(bet)}</b> (${money(bet*spots)} a round, ${Math.floor(start/(bet*spots))} rounds deep, about ${Math.round(rpg)} rounds per game):
+    after 1 game, <b>${up1.toFixed(0)}%</b> of sessions are ahead. After 20 games, <b>${up20.toFixed(0)}%</b> are ahead, <b>${dbl20.toFixed(0)}%</b> have doubled, and <b>${bust20.toFixed(0)}%</b> have lost it all. Average result: <b>${p1>=0?'+':'−'}${money(Math.abs(Math.round(p1)))}</b> per 100 hands.</div>
+  <div class="simleg"><span class="k0"></span>Lost it all <span class="k1"></span>Lost some <span class="k2"></span>Even <span class="k3"></span>Won some <span class="k4"></span>Doubled+</div>
+  <table class="simtab"><tr><th>Game</th><th>Lost all</th><th>Lost some</th><th>Even</th><th>Won some</th><th>Doubled+</th><th>Avg</th></tr>`;
+  acc.forEach((a,k)=>{
+    h+=`<tr><td><b>${k+1}</b></td>${a.map((v,i)=>`<td class="c${i}">${f(v)}%</td>`).join('')}<td>${money(Math.round(sums[k]/N))}</td></tr>
+    <tr class="barrow"><td colspan="7"><div class="sbar">${a.map((v,i)=>`<i class="k${i}" style="width:${pct(v)}%"></i>`).join('')}</div></td></tr>`;
+  });
+  h+=`</table><div class="small" style="margin-top:8px">"Lost it all" means less than one bet left. "Doubled+" means at least ${money(2*start)}. Avg is the average bankroll across all sessions. ${N.toLocaleString()} simulated sessions. Results shift a little each run.</div>`;
+  return h;
+}
+
+// ---------- save & restore ----------
+const SAVE_KEY='bjTrainerSession.v1';
+let saveT=null;
+function saveSession(){if(saveT)return;saveT=setTimeout(()=>{saveT=null;saveNow();},700);}
+function saveNow(){
+  if(busy)return;
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify({g,bk,S:{...S,dealT:0},LOG,BETS,cutOut,shuffleNote}));}catch(e){}
+}
+function loadSession(){
+  try{
+    const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
+    if(!d||!d.g||!d.bk||!d.S)return false;
+    if([...d.g.shoe,...d.g.burn,...d.g.discard,...d.g.dealer,...d.g.hands.flatMap(h=>h.cards)].length!==TOTAL)return false; // rules changed
+    g=d.g;bk=d.bk;bk.follower=true;S=d.S;LOG=d.LOG||[];BETS=Array.isArray(d.BETS)?d.BETS:[0,d.bet??25,0];cutOut=d.cutOut||0;shuffleNote=d.shuffleNote||'';
+    round++;vis={d:g.dealer.length,hole:g.phase==='play'||g.phase==='ins',h:g.hands.map(h=>h.cards.length)};
+    prevHide=vis.hole;banner='';
+    if(g.phase==='play'||g.phase==='ins')S.dealT=performance.now();
+    g.msg=`Welcome back. Picked up where you left off (hand ${S.hand}).`;
+    return true;
+  }catch(e){return false;}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){clearTimeout(saveT);saveT=null;saveNow();}});
+window.addEventListener('pagehide',()=>{clearTimeout(saveT);saveT=null;saveNow();});
+function clearSaved(){clearTimeout(saveT);saveT=null;try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
+
+// ---------- wiring ----------
+$('leftBtn').onclick=()=>{const m=mode();if(m==='play')decide('S');else if(m==='ins')decideIns(false);else showReport(g.phase==='over'&&cutOut===1&&LOG.some(r=>(r.shoe||1)===(S.shoe||1))?'deck':LOG.some(r=>r.hand===S.hand)&&g.phase==='over'?'hand':'session');};
+$('right').onclick=()=>{const m=mode();if(m==='play')decide('H');else if(m==='ins')decideIns(true);else deal();};
+$('dbl').onclick=()=>decide('D');$('sur').onclick=()=>decide('R');$('split').onclick=()=>decide('P');
+$('ask').onclick=askDealer;$('askIns').onclick=askDealer;
+$('sessRep').onclick=()=>showReport('session');
+$('chartBtn').onclick=showChart;
+$('simBtn').onclick=showSim;
+document.addEventListener('change',e=>{if(e.target.id==='myIns'){MY.ins=e.target.checked;saveMyBook();}});
+document.addEventListener('click',e=>{
+  const cell=e.target.closest('td[data-k]');
+  if(cell){cycleCell(cell.dataset.k);return;}
+  const cm=e.target.closest('[data-cm]');if(cm){chartMode=cm.dataset.cm;rerenderChart();return;}
+  const sv=e.target.closest('[data-sv]');if(sv){simView=sv.dataset.sv;renderSimOut();return;}
+  if(e.target.closest('#repMore')){repShowAll=true;const y=$('sheet').querySelector('.sheet-in').scrollTop;showReport(repWhich,true);$('sheet').querySelector('.sheet-in').scrollTop=y;return;}
+  if(e.target.closest('#myReset')){MY={...BOOK0};saveMyBook();rerenderChart();return;}
+  if(e.target.closest('#mySim')){showSim();return;}
+  if(e.target.closest('#simRun'))runSim();
+  else if(e.target.closest('#deckRepBtn'))showReport('deck');
+  else if(e.target.closest('#fullFromDeck'))showReport('session');
+});
+$('undo1').onclick=undo;$('undo2').onclick=undo;
+$('sheetClose').onclick=()=>{$('sheet').hidden=true;simTok++;};$('sheet').onclick=e=>{if(e.target.id==='sheet')$('sheet').hidden=true;};
+function addBet(n){
+  cancelAuto();if(busy)return;clearFelt();
+  if(totBet()+n>g.bank)g.msg='Not enough chips for that.';else BETS[sel]+=n;
+  render();
+}
+$('add25').onclick=()=>addBet(25);$('add100').onclick=()=>addBet(100);
+$('clearBet').onclick=()=>{cancelAuto();if(busy)return;clearFelt();BETS=[0,0,0];render();};
+// any touch outside the Deal button stops the 3-second auto-deal
+document.addEventListener('pointerdown',e=>{if(autoTimer&&!e.target.closest('#right'))cancelAuto();},true);
+$('resetBank').onclick=()=>{
+  if(busy||g.phase==='play'||g.phase==='ins'){g.msg='Finish the hand before starting a new session.';render();return;}
+  const v=Math.max(MIN_BET,Math.round((+$('startBank').value||200)/25)*25);
+  const bb=Math.min(v,Math.max(MIN_BET,Math.round((+$('bookBetIn').value||25)/25)*25));
+  $('startBank').value=v;$('bookBetIn').value=bb;
+  cutOut=0;banner='';clearSaved();newSession(v,bb);
+  g.msg=`New session: you and the Book both start with ${money(v)} on a fresh shuffle. Book bets ${money(bb)} a hand.`;render();
+};
+$('resetScore').onclick=()=>{g.right=0;g.total=0;LOG=[];render();};
+
+let confirmT=null;
+$('startOver').onclick=()=>{
+  const b=$('startOver');
+  if(!b.classList.contains('confirm')){
+    b.classList.add('confirm');b.textContent='Tap again to confirm';
+    confirmT=setTimeout(()=>{b.classList.remove('confirm');b.textContent='↺ Start over';},3000);
+    return;
+  }
+  clearTimeout(confirmT);b.classList.remove('confirm');b.textContent='↺ Start over';
+  const v=Math.max(MIN_BET,Math.round((+$('startBank').value||200)/25)*25);
+  const bb=Math.min(v,Math.max(MIN_BET,Math.round((+$('bookBetIn').value||25)/25)*25));
+  busy=false;prevHide=true;$('sheet').hidden=true;clearSaved();
+  cutOut=0;banner='';newSession(v,bb); g.right=0; g.total=0;
+  g.msg=`Starting over: you and the Book each have ${money(v)} on fresh decks.`;
+  render();
+};
+$('optMine').checked=opts.mine;$('optDealer').checked=opts.dealer;$('optGest').checked=opts.gest;
+function saveOpts(){opts.mine=$('optMine').checked;opts.dealer=$('optDealer').checked;opts.gest=$('optGest').checked;try{localStorage.setItem('bjOpts2',JSON.stringify(opts));}catch(e){}render();}
+$('optMine').onchange=saveOpts;$('optDealer').onchange=saveOpts;$('optGest').onchange=saveOpts;
+// ---------- gestures: tap the felt = hit, swipe across = stay (like signaling a real dealer) ----------
+let gs=null,gtT=null,tapT=null,ptrs=new Map(),two=null;
+const pdist=()=>{const [a,b]=[...ptrs.values()];return Math.hypot(a.x-b.x,a.y-b.y);};
+function gToast(t,cls){const el=$('gflash');el.textContent=t;el.className='';void el.offsetWidth;el.className='show '+cls;clearTimeout(gtT);gtT=setTimeout(()=>{el.className='';},380);}
+function spotTap(i){ // tap a circle: empty -> table minimum, otherwise +$5
+  clearFelt();sel=i;
+  const add=BETS[i]?5:MIN_BET;
+  if(totBet()+add>g.bank){gToast('Not enough chips','dl');render();return;}
+  BETS[i]+=add;gToast(`+${money(add)} ${SPOTNAME[i].toLowerCase()}`,'dl');render();
+}
+function spotClear(i){clearFelt();if(!BETS[i])return;gToast(`${SPOTNAME[i]} cleared`,'st');BETS[i]=0;if(sel===i){const f=BETS.findIndex(v=>v);sel=BETS[1]?1:f>=0?f:1;}render();}
+function gDown(e){
+  const m=mode();
+  if(busy||!$('sheet').hidden||(m!=='play'&&m!=='bet'))return;
+  if(m==='play'&&!opts.gest)return;
+  if(e.target.closest('#cutBanner,button,a,input,select,label'))return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  try{e.currentTarget.setPointerCapture(e.pointerId);}catch(_){}
+  if(ptrs.size===2&&m==='play'){ // second finger down: this is a two-finger gesture, not a tap
+    gs=null;clearTimeout(tapT);tapT=null;two={d0:pdist(),done:false};return;
+  }
+  if(ptrs.size===1)gs={x:e.clientX,y:e.clientY,t:Date.now(),spot:m==='bet'?e.target.closest('.circle[data-spot]'):null};
+}
+function gMove(e){
+  const p=ptrs.get(e.pointerId);if(!p)return;
+  p.x=e.clientX;p.y=e.clientY;
+  if(two&&!two.done&&ptrs.size>=2&&pdist()-two.d0>45){ // fingers spread apart = split
+    two.done=true;
+    if(mode()==='play'&&!busy){const h=g.hands[g.cur];
+      if(canSplit(g,h)){gToast('SPLIT','sp');decide('P');}
+      else gToast(h.cards.length===2&&cardVal(h.cards[0])===cardVal(h.cards[1])?'Not enough chips to split':'Not a pair','dl');}
+  }
+}
+function gUp(e){
+  ptrs.delete(e.pointerId);
+  if(two){if(!ptrs.size)two=null;gs=null;return;}
+  if(!gs)return;
+  const dx=e.clientX-gs.x,dy=e.clientY-gs.y,dt=Date.now()-gs.t,sp=gs.spot;gs=null;
+  if(busy)return;
+  const m=mode(), swipe=Math.abs(dx)>40&&Math.abs(dx)>1.4*Math.abs(dy), tap=Math.abs(dx)<14&&Math.abs(dy)<14&&dt<500;
+  if(m==='bet'){
+    if(sp){const i=+sp.dataset.spot; // chips in a betting circle
+      if(tap)spotTap(i);else if(swipe&&dx<0)spotClear(i);
+      return;}
+    if(tap&&opts.gest&&betsOK()){gToast('DEAL','dl');deal();} // tap the felt to deal
+    return;
+  }
+  if(m!=='play')return;
+  const h=g.hands[g.cur];
+  if(swipe){clearTimeout(tapT);tapT=null;gToast('STAY','st');decide('S');return;}
+  if(!tap)return;
+  if(tapT){ // second tap in a row = double down
+    clearTimeout(tapT);tapT=null;
+    if(canDouble(g,h)){gToast('DOUBLE','db');decide('D');}
+    return;
+  }
+  if(canDouble(g,h)){ // wait a beat to see if a second tap is coming
+    tapT=setTimeout(()=>{tapT=null;if(mode()==='play'&&!busy&&canHit(g,g.hands[g.cur])){gToast('HIT','hi');decide('H');}},260);
+  }else if(canHit(g,h)){gToast('HIT','hi');decide('H');}
+  else gToast('One card on split aces','st');
+}
+for(const el of [document.querySelector('.table'),$('gestPad')]){
+  el.addEventListener('pointerdown',gDown);
+  el.addEventListener('pointerup',gUp);
+  el.addEventListener('pointermove',gMove);
+  el.addEventListener('pointercancel',e=>{ptrs.delete(e.pointerId);if(!ptrs.size)two=null;gs=null;});
+}
+try{document.getElementById('fontcss').media='all';}catch(e){}
+// ---------- table rules ----------
+const RULE_FIELDS=[['rDecks','decks',Number],['rH17','h17',v=>v==='1'],['rBJ','bj',Number],['rDbl','dbl',String],['rDAS','das',v=>v==='1'],['rSur','sur',v=>v==='1'],['rRSA','rsa',Number],['rHSA','hsa',v=>v==='1'],['rMax','maxHands',Number],['rPen','pen',Number]];
+function rulesToForm(){for(const[id,k]of RULE_FIELDS){const v=RULES[k];$(id).value=typeof v==='boolean'?(v?'1':'0'):String(v);}$('rulesSummary').textContent=rulesText()+'.';}
+function formToRules(){const r={};for(const[id,k,f]of RULE_FIELDS)r[k]=f($(id).value);return r;}
+function paintPrint(){
+  try{$('printBJ').textContent=`BLACKJACK PAYS ${RULES.bj===1.2?'6 TO 5':'3 TO 2'}`;$('printS17').textContent=RULES.h17?'DEALER MUST HIT SOFT 17':'DEALER STANDS ON ALL 17s';}catch(e){}
+}
+try{applyRules(JSON.parse(localStorage.getItem('bjRules')||'null'));}catch(e){applyRules(null);}
+let rulesConfirmT=null;
+function commitRules(r,btn,label){
+  if(busy){g.msg='Wait for the hand to finish.';render();return;}
+  if(!btn.classList.contains('confirm')){btn.classList.add('confirm');btn.textContent='Tap again: this starts a new session';clearTimeout(rulesConfirmT);
+    rulesConfirmT=setTimeout(()=>{btn.classList.remove('confirm');btn.textContent=label;},3500);return;}
+  clearTimeout(rulesConfirmT);btn.classList.remove('confirm');btn.textContent=label;
+  applyRules(r);try{localStorage.setItem('bjRules',JSON.stringify(RULES));}catch(e){}
+  loadMyBook();clearSaved();cutOut=0;banner='';busy=false;prevHide=true;
+  newSession(S.start||200,S.bookBet||25);g.right=0;g.total=0;
+  g.msg=`New rules: ${rulesText()}.`;rulesToForm();paintPrint();render();
+}
+$('rulesApply').onclick=()=>commitRules(formToRules(),$('rulesApply'),'Apply rules (starts a new session)');
+$('rulesReset').onclick=()=>commitRules({...DEFAULT_RULES},$('rulesReset'),'Back to the default rules');
+document.addEventListener('change',e=>{if(e.target.closest('.rulegrid')){const r=formToRules();$('rulesSummary').textContent=JSON.stringify(r)===JSON.stringify({...RULES,...r})&&Object.keys(r).every(k=>r[k]===RULES[k])?rulesText()+'.':'Not applied yet. Tap Apply to play with these rules.';}});
+// size the felt so it fills the screen above the controls
+function fitTable(){
+  try{
+    const t=document.querySelector('.table'),bar=$('bar');
+    const top=t.getBoundingClientRect().top+window.scrollY;
+    const h=window.innerHeight-top-bar.offsetHeight-10;
+    document.documentElement.style.setProperty('--tableH',Math.max(380,h)+'px');
+  }catch(e){}
+}
+window.addEventListener('resize',fitTable);
+setTimeout(fitTable,0);setTimeout(fitTable,400);
+try{loadMyBook();}catch(e){BOOK0=defaultBook();MY={...BOOK0};}
+rulesToForm();paintPrint();
+try{
+  if(!loadSession())newSession(200,25);
+  render();
+}catch(e){
+  clearSaved();busy=false;newSession(200,25);
+  g.msg="Your saved session couldn't be loaded, so a new one started.";
+  render();
+}
+</script>
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
+</script>
+</body>
+</html>
