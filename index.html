@@ -357,16 +357,66 @@
   .cc-R{background:#d9a7f0}.cc-Rs{background:#c08ad8}.cc-Rp{background:#a99af5}
   .b-surrender{background:#888;color:#fff}
   .sheet-in .tabs:first-child{margin-right:78px}
+  #welcome{position:fixed;inset:0;z-index:80;background:radial-gradient(ellipse at 50% 20%,#1d8a4a 0%,#0f5f31 50%,#08361b 100%);display:flex;justify-content:center;
+    padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));overflow:hidden}
+  #welcome[hidden]{display:none!important}
+  #welcome::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.18;background-image:radial-gradient(#000 1px,transparent 1px);background-size:3px 3px}
+  .w-in{position:relative;width:100%;max-width:480px;display:flex;flex-direction:column}
+  #wHome{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;text-align:center}
+  #wHome[hidden],#wTour[hidden]{display:none!important}
+  .w-cards{display:flex;margin-bottom:6px}
+  .w-card{width:74px;height:106px;background:#fff;border-radius:9px;color:#15181b;font:700 30px Georgia,serif;padding:6px 9px;box-shadow:0 8px 18px #000a;transform:rotate(-10deg);display:flex;flex-direction:column}
+  .w-card small{font-size:26px;margin-top:2px}
+  .w-card.red{color:#c31717;transform:rotate(9deg) translate(-14px,4px)}
+  #welcome h1{font-family:Cinzel,Georgia,serif;color:#e9c46a;font-size:32px;margin:6px 0 0;letter-spacing:1px;text-shadow:0 2px 6px #000a}
+  .w-tag{color:#f2e2b0;margin:0 10px 14px;font-size:15px;line-height:1.4}
+  .w-big{width:100%;max-width:330px;height:58px;border-radius:14px;font-size:19px;background:#ffffff1f;color:#fff;border:1px solid #ffffff40!important;box-shadow:0 4px 0 #0006}
+  .w-big.gold,#welcome .gold{background:linear-gradient(#f6d77e,#d4a63b);color:#222;border:0!important;font-family:Cinzel,Georgia,serif;letter-spacing:1px}
+  #wTour{display:flex;flex-direction:column;flex:1;min-height:0}
+  .w-top{display:flex;justify-content:space-between;align-items:center;color:#f2e2b0;font-size:12px;font-weight:700;margin-bottom:8px}
+  .w-top button{background:#0000004d;color:#fff;border-radius:8px;padding:7px 10px;font-size:13px}
+  #wPage{flex:1;min-height:0;overflow:auto;background:#0b1f14e6;border:1px solid #e9c46a55;border-radius:16px;padding:16px 16px 18px;color:#eee;box-shadow:0 8px 20px #0008}
+  .w-icon{font-size:38px;line-height:1}
+  #wPage h2{font-family:Cinzel,Georgia,serif;color:#e9c46a;font-size:21px;margin:8px 0 8px}
+  .w-body{font-size:15px;line-height:1.5}
+  .w-body ul{padding-left:18px;margin:8px 0}.w-body li{margin-bottom:6px}
+  .w-body b{color:#fff}
+  .w-gest{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+  .w-gest div{background:#ffffff14;border:1px dashed #ffffff40;border-radius:10px;padding:10px;text-align:center;color:#ccc;font-size:13px}
+  .w-gest b{display:block;color:#fff;font-size:15px;margin-bottom:2px}
+  .w-dots{display:flex;justify-content:center;gap:6px;margin:12px 0}
+  .w-dots i{width:7px;height:7px;border-radius:50%;background:#ffffff40}.w-dots i.on{background:#e9c46a;width:18px;border-radius:4px}
+  .w-nav{display:grid;grid-template-columns:1fr 2fr;gap:10px}
+  .w-nav button{height:54px;border-radius:14px;font-size:17px;background:#ffffff1f;color:#fff}
+  #helpBtn{min-width:26px}
   #app{padding-top:calc(8px + env(safe-area-inset-top))}
   html,body{overscroll-behavior:none}
 </style>
 </head>
 <body>
+<div id="welcome">
+  <div class="w-in">
+    <div id="wHome">
+      <div class="w-cards"><div class="w-card">A<small>♠</small></div><div class="w-card red">K<small>♥</small></div></div>
+      <h1>Blackjack Trainer</h1>
+      <p class="w-tag">Real shuffles. Perfect-strategy coaching. A simulator that tells the truth.</p>
+      <button id="wStart" class="w-big gold">Start</button>
+      <button id="wWhat" class="w-big">What is this?</button>
+      <button id="wHow" class="w-big">How to play</button>
+    </div>
+    <div id="wTour" hidden>
+      <div class="w-top"><button id="wBack2">‹ Menu</button><span id="wStep"></span><button id="wSkip">Skip</button></div>
+      <div id="wPage"></div>
+      <div class="w-dots" id="wDots"></div>
+      <div class="w-nav"><button id="wPrev">Back</button><button id="wNext" class="gold">Next</button></div>
+    </div>
+  </div>
+</div>
 <div id="sheet" hidden><div class="sheet-in"><button id="sheetClose">Close</button><div id="sheetBody"></div></div></div>
 <div id="app">
   <div class="topbar">
     <div>Bankroll<b id="bank">$200</b></div>
-    <div class="mid">Hand <b id="handNo" class="inl">0</b><span class="topbtns"><button id="startOver">↺ Start over</button><button id="chartBtn">▦ Chart</button><button id="simBtn">📈 Sim</button></span></div>
+    <div class="mid">Hand <b id="handNo" class="inl">0</b><span class="topbtns"><button id="startOver">↺ Start over</button><button id="chartBtn">▦ Chart</button><button id="simBtn">📈 Sim</button><button id="helpBtn" aria-label="Help">?</button></span></div>
     <div style="text-align:right">Until shuffle<b id="untilShuf">—</b><span id="left" class="sub"></span></div>
   </div>
 
@@ -1407,7 +1457,7 @@ function spotTap(i){ // tap a circle: empty -> table minimum, otherwise +$5
 function spotClear(i){clearFelt();if(!BETS[i])return;gToast(`${SPOTNAME[i]} cleared`,'st');BETS[i]=0;if(sel===i){const f=BETS.findIndex(v=>v);sel=BETS[1]?1:f>=0?f:1;}render();}
 function gDown(e){
   const m=mode();
-  if(busy||!$('sheet').hidden||(m!=='play'&&m!=='bet'))return;
+  if(busy||!$('sheet').hidden||!$('welcome').hidden||(m!=='play'&&m!=='bet'))return;
   if(m==='play'&&!opts.gest)return;
   if(e.target.closest('#cutBanner,button,a,input,select,label'))return;
   ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
@@ -1495,6 +1545,56 @@ function fitTable(){
 }
 window.addEventListener('resize',fitTable);
 setTimeout(fitTable,0);setTimeout(fitTable,400);
+
+// ---------- welcome screen & guided tours ----------
+const TOURS={
+  what:[
+    {i:'🂠',h:'A real shuffle, a real deck',b:`Every shuffle sets the order of the whole deck once, then the cards come off the top in exactly that order, just like a hand-dealt game. If two 10♠ are gone, they're gone.<ul><li>The dealer shuffles the way a pitch dealer does: riffle, riffle, strip, riffle, cut, burn one card.</li><li>The cut card sits about 70% of the way in. When it comes out you get a warning, and the next hand starts with a fresh shuffle.</li><li>Split hands even get their cards in the real order.</li></ul>`},
+    {i:'📖',h:'You vs the Book',b:`Every time you deal, a perfect player called <b>the Book</b> plays the same hand on its own copy of the same deck, betting a flat amount.<ul><li>Play by the book and you see exactly the Book's cards.</li><li>Make a different play (or play more spots) and the cards go different ways, just like real life. At the next shuffle you both get the same new deck again.</li><li>The panel under the table shows who's ahead and who lasted longer.</li></ul>`},
+    {i:'🤫',h:'Coaching without spoilers',b:`The trainer never flashes right or wrong while you play. It quietly grades every decision against basic strategy.<ul><li>Stuck? Tap <b>Ask dealer</b> and the dealer tells you the book play.</li><li>After each hand and each deck you can open a report: mistakes first, with the actual cards, splits marked, and how each hand turned out.</li></ul>`},
+    {i:'🔢',h:'The count, revealed later',b:`The trainer tracks the Hi-Lo count going into every hand (2–6 count +1, 7–9 count 0, tens and aces −1), plus the true count per deck remaining.<ul><li>It stays hidden while you play the deck.</li><li>Once the deck is done, the report shows the count for every hand, so you can check your own counting.</li></ul>`},
+    {i:'🧮',h:'Strategy computed, not copied',b:`The book isn't typed in from a card. It's calculated: for every hand against every dealer card it works out the expected value of hitting, staying, doubling, splitting and surrendering, with the cards already out of the deck taken into account and the dealer checking for blackjack.<ul><li>Change the table rules (decks, soft 17, doubling, surrender and more) and the right strategy changes with them.</li><li>It matches the published charts. Open <b>▦ Chart</b> to see it.</li></ul>`},
+    {i:'📈',h:'Simulator and My Book',b:`<b>📈 Sim</b> plays thousands of sessions perfectly by the book with your bankroll, bet and number of spots, and shows how often you'd be ahead, doubled up or broke after 1 to 20 decks.<ul><li>In the chart, the <b>My Book</b> tab lets you change any play to what you like to do.</li><li>The simulator then runs your book against the real one on the exact same shuffles, so you see what your habits cost.</li></ul>`},
+    {i:'⭐',h:'Built like a table',b:`<ul><li>Up to three spots, played right to left like a real table.</li><li>Undo for misclicks, with the report marking hands where you used it.</li><li>Your session saves automatically, even mid-hand.</li><li>Works offline once it's on your Home Screen.</li></ul>Ready? Tap <b>Start playing</b>.`}
+  ],
+  how:[
+    {i:'🪙',h:'Placing bets',b:`<ul><li><b>Tap an empty circle</b> to put down $25 (the table minimum). <b>Tap again</b> to add $5.</li><li><b>Swipe left</b> on a circle to take its chips back.</li><li>There are three circles, left, middle and right, so you can play up to three hands.</li><li>The <b>25</b> and <b>100</b> chips at the bottom add to the circle you touched last. <b>Clear</b> removes everything.</li><li>Tap <b>DEAL</b>, or just tap the felt.</li></ul>`},
+    {i:'👆',h:'Playing your hand',b:`Signal the dealer right on the felt (or on the dashed strip at the bottom):<div class="w-gest"><div><b>Tap</b>Hit</div><div><b>Double-tap</b>Double</div><div><b>Swipe</b>Stay</div><div><b>Spread 2 fingers</b>Split</div></div>Each one flashes a small label on the bottom strip so you know it registered. On your first two cards, a single tap waits a beat to see if a second tap is coming.`},
+    {i:'🔘',h:'The buttons',b:`<ul><li><b>↶ Undo</b> takes back your last play, even after a stay. The card goes back on top, so the report marks it.</li><li><b>Double</b> and <b>Split</b> work like the gestures.</li><li><b>Surrender</b> shows up only if your table rules allow it.</li><li><b>Ask dealer</b> tells you the book play for your spot.</li><li>When the dealer shows an ace, you'll choose <b>Insurance</b> or <b>No insurance</b> (the book never takes it).</li></ul>`},
+    {i:'⏭️',h:'Between hands',b:`<ul><li>After the first hand, the next one deals itself after <b>5 seconds</b>. Touch anything to stop the countdown.</li><li>The left button opens a <b>Hand report</b>.</li><li>When the cut card comes out you get a banner. At the end of the deck, <b>See this deck's results</b> opens that deck's report, with the count revealed.</li></ul>`},
+    {i:'🧭',h:'Top of the screen',b:`<ul><li><b>Bankroll</b> and <b>Hand</b> number.</li><li><b>↺ Start over</b> starts a fresh session. Tap it twice to confirm.</li><li><b>▦ Chart</b> is the strategy chart for your rules, plus your My Book tab.</li><li><b>📈 Sim</b> is the simulator.</li><li><b>?</b> brings back this screen.</li><li><b>Until shuffle</b> is how many cards are left before the cut card.</li></ul>`},
+    {i:'⬇️',h:'Scroll down for more',b:`Below the table:<ul><li><b>You vs the Book</b>: bankrolls, who's ahead, average time per hand, and the full <b>Session report</b>.</li><li><b>Cards still in play</b>: every card you haven't seen yet this deck.</li><li><b>Settings &amp; hints</b>: show or hide your total and the dealer's, turn gestures on or off, and set your starting bankroll and the Book's bet.</li><li><b>Table rules</b>: decks, soft 17, payout, doubling, surrender, splits and penetration.</li></ul>Tap <b>Start playing</b> to deal your first hand.`}
+  ]
+};
+let wTour=null,wIdx=0;
+function showWelcome(){
+  cancelAuto();
+  $('wStart').textContent=S&&S.hand>0?`Continue (hand ${S.hand})`:'Start';
+  $('wHome').hidden=false;$('wTour').hidden=true;$('welcome').hidden=false;
+}
+function hideWelcome(){$('welcome').hidden=true;setTimeout(fitTable,50);}
+function openTour(k){wTour=k;wIdx=0;$('wHome').hidden=true;$('wTour').hidden=false;paintTour();}
+function paintTour(){
+  const pages=TOURS[wTour],pg=pages[wIdx];
+  $('wPage').innerHTML=`<div class="w-icon">${pg.i}</div><h2>${pg.h}</h2><div class="w-body">${pg.b}</div>`;
+  $('wStep').textContent=`${wTour==='what'?'What is this?':'How to play'} · ${wIdx+1} of ${pages.length}`;
+  $('wDots').innerHTML=pages.map((_,i)=>`<i class="${i===wIdx?'on':''}"></i>`).join('');
+  $('wPrev').style.visibility=wIdx?'visible':'hidden';
+  $('wNext').textContent=wIdx===pages.length-1?'Start playing':'Next';
+  $('wPage').scrollTop=0;
+}
+$('wStart').onclick=hideWelcome;
+$('wWhat').onclick=()=>openTour('what');$('wHow').onclick=()=>openTour('how');
+$('wBack2').onclick=()=>{$('wHome').hidden=false;$('wTour').hidden=true;};
+$('wSkip').onclick=hideWelcome;
+$('wPrev').onclick=()=>{if(wIdx>0){wIdx--;paintTour();}};
+$('wNext').onclick=()=>{if(wIdx<TOURS[wTour].length-1){wIdx++;paintTour();}else hideWelcome();};
+$('helpBtn').onclick=showWelcome;
+// swipe between tour pages
+(()=>{let x0=null;const el=$('wTour');
+  el.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;},{passive:true});
+  el.addEventListener('touchend',e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;
+    if(dx<-50)$('wNext').click();else if(dx>50&&wIdx>0)$('wPrev').click();});})();
 try{loadMyBook();}catch(e){BOOK0=defaultBook();MY={...BOOK0};}
 rulesToForm();paintPrint();
 try{
@@ -1505,6 +1605,7 @@ try{
   g.msg="Your saved session couldn't be loaded, so a new one started.";
   render();
 }
+showWelcome();
 </script>
 <script>
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
