@@ -389,6 +389,26 @@
   .w-nav{display:grid;grid-template-columns:1fr 2fr;gap:10px}
   .w-nav button{height:54px;border-radius:14px;font-size:17px;background:#ffffff1f;color:#fff}
   #helpBtn{min-width:26px}
+  /* many hands: shrink to fit and wrap into rows instead of running off the felt */
+  #spots.multi{flex-wrap:wrap;row-gap:6px;justify-content:center;gap:4px 2px}
+  #spots.multi .spot{flex:0 0 calc(100% / var(--per,3) - 4px);min-width:0;padding:2px 0 4px}
+  #spots.multi .card{width:var(--cw,44px);height:var(--ch,64px);margin-left:calc(var(--cw,44px) * -0.6)}
+  #spots.multi .card .tl{font-size:calc(var(--cw,44px) * 0.3);top:3px;left:3px}
+  #spots.multi .card .tl small{font-size:calc(var(--cw,44px) * 0.26)}
+  #spots.multi .card .mid{font-size:calc(var(--cw,44px) * 0.45)}
+  #spots.multi .cards,#spots.multi .cardrow{min-height:var(--ch,64px)}
+  #spots.multi .circle{width:var(--cc,50px);height:var(--cc,50px)}
+  #spots.multi .circle .stack{transform:scale(var(--cs,.8))}
+  #spots.multi .betlabel{font-size:10px;margin:1px 0 2px}
+  #spots.multi .hinfo .total{font-size:12px;padding:1px 7px}
+  /* top bar: keep it on one line */
+  .topbar{gap:4px}
+  .topbar>div:first-child,.topbar>div:last-child{flex:0 0 auto;white-space:nowrap}
+  .topbar .mid{flex:1;min-width:0}
+  .topbtns{gap:4px!important;flex-wrap:nowrap}
+  .topbtns button{white-space:nowrap;padding:3px 6px!important;font-size:11px!important}
+  #untilShuf{white-space:nowrap}
+  #spots.inhand{flex-direction:row-reverse}
   #app{padding-top:calc(8px + env(safe-area-inset-top))}
   html,body{overscroll-behavior:none}
 </style>
@@ -1068,14 +1088,19 @@ function render(){
 
   const inHand=g.hands.length&&g.phase!=='idle';
   if(!inHand){
+    $('spots').classList.remove('inhand','multi');
     $('spots').innerHTML=[0,1,2].map(i=>`<div class="spot bet${i===sel?' sel':''}"><div class="circle${BETS[i]?'':' empty'}" data-spot="${i}">${BETS[i]?stackHTML(BETS[i]):'<span class="plus">+</span>'}</div><div class="betlabel">${BETS[i]?money(BETS[i]):'Tap to bet'}</div><div class="cardrow"><div class="cards"></div></div></div>`).join('');
   }else{
+    $('spots').classList.add('inhand');
     $('spots').classList.toggle('multi',g.hands.length>1&&g.phase!=='idle');
-    const order=g.hands.map((h,i)=>i).sort((a,b)=>((g.hands[a].spot??1)-(g.hands[b].spot??1))||(a-b));
+    {const n=g.hands.length+(g.phase==='over'&&!busy?3-new Set(g.hands.map(h=>h.spot??1)).size:0);
+     const sz=n<=3?[46,67,50,3]:n<=6?[42,61,42,3]:n<=8?[38,55,36,4]:[34,49,32,4]; // card w, card h, circle, hands per row
+     const el=$('spots');el.style.setProperty('--cw',sz[0]+'px');el.style.setProperty('--ch',sz[1]+'px');el.style.setProperty('--cc',sz[2]+'px');el.style.setProperty('--cs',(sz[2]/60).toFixed(2));el.style.setProperty('--per',sz[3]);}
+    const order=g.hands.map((h,i)=>i).sort((a,b)=>((g.hands[b].spot??1)-(g.hands[a].spot??1))||(a-b));
     const cols=order.map(i=>({spot:g.hands[i].spot??1,i}));
     // after a hand, keep the empty circles on the felt so you can add a spot for the next hand
     if(g.phase==='over'&&!busy)for(const sp of [0,1,2])if(!cols.some(c=>c.spot===sp))cols.push({spot:sp,i:-1});
-    cols.sort((a,b)=>(a.spot-b.spot)||(a.i-b.i));
+    cols.sort((a,b)=>(b.spot-a.spot)||(a.i-b.i));
     $('spots').innerHTML=cols.map(({spot,i})=>{
       if(i<0)return`<div class="spot bet"><div class="circle empty" data-spot="${spot}"><span class="plus">+</span></div><div class="betlabel">Tap to bet</div><div class="cardrow"><div class="cards"></div></div></div>`;
       const h=g.hands[i];
