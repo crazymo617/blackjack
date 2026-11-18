@@ -409,7 +409,22 @@
   .topbtns button{white-space:nowrap;padding:3px 6px!important;font-size:11px!important}
   #untilShuf{white-space:nowrap}
   #spots.inhand{flex-direction:row-reverse}
-  #app{padding-top:calc(8px + env(safe-area-inset-top))}
+  /* pinned headers */
+  .topbar{position:sticky;top:0;z-index:30;background:#141414f2;backdrop-filter:blur(6px);margin:0 -8px;padding-left:12px!important;padding-right:12px!important;padding-top:calc(4px + env(safe-area-inset-top))!important}
+  .sheet-in{padding-top:0!important}
+  .sheet-head{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#1b1f1c;margin:0 -14px;padding:12px 14px 10px;border-bottom:1px solid #ffffff14}
+  #sheetTitle{font-family:Cinzel,Georgia,serif;color:var(--gold);font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #sheetClose{position:static!important;flex:0 0 auto}
+  #sheetBody>h3:first-child{display:none}
+  .sheet-in .tabs:first-child{margin-right:0!important}
+  .sheet-in .tabs{position:sticky;top:var(--headH,52px);z-index:4;background:#262b27}
+  table.chart tr:first-child th{position:sticky;top:var(--headH,52px);z-index:3;background:#1b1f1c;padding:5px 0}
+  .w-new{margin-top:6px;background:none;border:0;color:#f2e2b0;font-size:15px;text-decoration:underline;padding:8px}
+  .w-new.confirm{background:#b3271a;color:#fff;text-decoration:none;border-radius:10px;padding:10px 14px}
+  .sheet-in:has(#sheetBody>.tabs) table.chart tr:first-child th{top:var(--tabsBottom,100px)}
+  .sheet-in #sheetBody>.tabs{margin-top:0;box-shadow:0 -6px 0 #1b1f1c,0 6px 0 #1b1f1c}
+  table.chart tr:first-child th{box-shadow:0 -3px 0 #1b1f1c,0 3px 0 #1b1f1c}
+  #app{padding-top:0}
   html,body{overscroll-behavior:none}
 </style>
 </head>
@@ -423,6 +438,7 @@
       <button id="wStart" class="w-big gold">Start</button>
       <button id="wWhat" class="w-big">What is this?</button>
       <button id="wHow" class="w-big">How to play</button>
+      <button id="wNew" class="w-new" hidden>↺ Start a new session</button>
     </div>
     <div id="wTour" hidden>
       <div class="w-top"><button id="wBack2">‹ Menu</button><span id="wStep"></span><button id="wSkip">Skip</button></div>
@@ -432,7 +448,7 @@
     </div>
   </div>
 </div>
-<div id="sheet" hidden><div class="sheet-in"><button id="sheetClose">Close</button><div id="sheetBody"></div></div></div>
+<div id="sheet" hidden><div class="sheet-in"><div class="sheet-head"><span id="sheetTitle"></span><button id="sheetClose">Close</button></div><div id="sheetBody"></div></div></div>
 <div id="app">
   <div class="topbar">
     <div>Bankroll<b id="bank">$200</b></div>
@@ -1256,7 +1272,7 @@ function chartHTML(){
   for(let t=13;t<=20;t++)soft+=row('s',t,`A,${t-11}`);
   for(const v of PAIR_ROWS)pairs+=row('p',v,v===11?'A,A':`${v},${v}`);
   const n=myChanges();
-  return`<div class="tabs"><button data-cm="book" class="${mine?'':'on'}">The Book</button><button data-cm="mine" class="${mine?'on':''}">My Book${n?` (${n})`:''}</button></div>
+  return`<h3>${mine?'My Book':'Strategy chart'}</h3><div class="tabs"><button data-cm="book" class="${mine?'':'on'}">The Book</button><button data-cm="mine" class="${mine?'on':''}">My Book${n?` (${n})`:''}</button></div>
   ${mine?`<div class="small"><b>Tap any square to change it</b> (H → S → D → Ds, P on pairs${RULES.sur?', R/Rs surrender':''}). Squares you've changed get a red corner. The trainer still grades you against The Book. My Book is for the simulator.</div>
   <label class="tog"><span>My Book takes insurance</span><input type="checkbox" id="myIns" ${MY.ins?'checked':''}><i></i></label>`
   :`<div class="small">${rulesText()}. Your hand down the side, dealer's up card across the top.${cur?' <b>Your current spot is outlined.</b>':''}</div>`}
@@ -1430,6 +1446,11 @@ document.addEventListener('click',e=>{
   else if(e.target.closest('#fullFromDeck'))showReport('session');
 });
 $('undo1').onclick=undo;$('undo2').onclick=undo;
+function pinOffsets(){ // where pinned rows sit under the sheet's pinned title (and tabs)
+  const si=$('sheet').querySelector('.sheet-in'),hh=si.querySelector('.sheet-head').offsetHeight,t=$('sheetBody').querySelector(':scope>.tabs');
+  si.style.setProperty('--headH',hh+'px');si.style.setProperty('--tabsBottom',(hh+(t?t.offsetHeight:0))+'px');
+}
+new MutationObserver(()=>{const h=$('sheetBody').querySelector('h3');$('sheetTitle').textContent=h?h.textContent:'';requestAnimationFrame(pinOffsets);}).observe($('sheetBody'),{childList:true});
 $('sheetClose').onclick=()=>{$('sheet').hidden=true;simTok++;};$('sheet').onclick=e=>{if(e.target.id==='sheet')$('sheet').hidden=true;};
 function addBet(n){
   cancelAuto();if(busy)return;clearFelt();
@@ -1459,13 +1480,16 @@ $('startOver').onclick=()=>{
     return;
   }
   clearTimeout(confirmT);b.classList.remove('confirm');b.textContent='↺ Start over';
+  freshStart();
+};
+function freshStart(){
   const v=Math.max(MIN_BET,Math.round((+$('startBank').value||200)/25)*25);
   const bb=Math.min(v,Math.max(MIN_BET,Math.round((+$('bookBetIn').value||25)/25)*25));
   busy=false;prevHide=true;$('sheet').hidden=true;clearSaved();
   cutOut=0;banner='';newSession(v,bb); g.right=0; g.total=0;
   g.msg=`Starting over: you and the Book each have ${money(v)} on fresh decks.`;
   render();
-};
+}
 $('optMine').checked=opts.mine;$('optDealer').checked=opts.dealer;$('optGest').checked=opts.gest;
 function saveOpts(){opts.mine=$('optMine').checked;opts.dealer=$('optDealer').checked;opts.gest=$('optGest').checked;try{localStorage.setItem('bjOpts2',JSON.stringify(opts));}catch(e){}render();}
 $('optMine').onchange=saveOpts;$('optDealer').onchange=saveOpts;$('optGest').onchange=saveOpts;
@@ -1482,8 +1506,8 @@ function spotTap(i){ // tap a circle: empty -> table minimum, otherwise +$5
 function spotClear(i){clearFelt();if(!BETS[i])return;gToast(`${SPOTNAME[i]} cleared`,'st');BETS[i]=0;if(sel===i){const f=BETS.findIndex(v=>v);sel=BETS[1]?1:f>=0?f:1;}render();}
 function gDown(e){
   const m=mode();
-  if(busy||!$('sheet').hidden||!$('welcome').hidden||(m!=='play'&&m!=='bet'))return;
-  if(m==='play'&&!opts.gest)return;
+  if(busy||!$('sheet').hidden||!$('welcome').hidden||(m!=='play'&&m!=='bet'&&m!=='ins'))return;
+  if((m==='play'||m==='ins')&&!opts.gest)return;
   if(e.target.closest('#cutBanner,button,a,input,select,label'))return;
   ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
   try{e.currentTarget.setPointerCapture(e.pointerId);}catch(_){}
@@ -1514,6 +1538,10 @@ function gUp(e){
       if(tap)spotTap(i);else if(swipe&&dx<0)spotClear(i);
       return;}
     if(tap&&opts.gest&&betsOK()){gToast('DEAL','dl');deal();} // tap the felt to deal
+    return;
+  }
+  if(m==='ins'){ // wave off insurance, like waving off a hit
+    if(swipe){gToast('NO INSURANCE','st');decideIns(false);}
     return;
   }
   if(m!=='play')return;
@@ -1585,7 +1613,7 @@ const TOURS={
   how:[
     {i:'🪙',h:'Placing bets',b:`<ul><li><b>Tap an empty circle</b> to put down $25 (the table minimum). <b>Tap again</b> to add $5.</li><li><b>Swipe left</b> on a circle to take its chips back.</li><li>There are three circles, left, middle and right, so you can play up to three hands.</li><li>The <b>25</b> and <b>100</b> chips at the bottom add to the circle you touched last. <b>Clear</b> removes everything.</li><li>Tap <b>DEAL</b>, or just tap the felt.</li></ul>`},
     {i:'👆',h:'Playing your hand',b:`Signal the dealer right on the felt (or on the dashed strip at the bottom):<div class="w-gest"><div><b>Tap</b>Hit</div><div><b>Double-tap</b>Double</div><div><b>Swipe</b>Stay</div><div><b>Spread 2 fingers</b>Split</div></div>Each one flashes a small label on the bottom strip so you know it registered. On your first two cards, a single tap waits a beat to see if a second tap is coming.`},
-    {i:'🔘',h:'The buttons',b:`<ul><li><b>↶ Undo</b> takes back your last play, even after a stay. The card goes back on top, so the report marks it.</li><li><b>Double</b> and <b>Split</b> work like the gestures.</li><li><b>Surrender</b> shows up only if your table rules allow it.</li><li><b>Ask dealer</b> tells you the book play for your spot.</li><li>When the dealer shows an ace, you'll choose <b>Insurance</b> or <b>No insurance</b> (the book never takes it).</li></ul>`},
+    {i:'🔘',h:'The buttons',b:`<ul><li><b>↶ Undo</b> takes back your last play, even after a stay. The card goes back on top, so the report marks it.</li><li><b>Double</b> and <b>Split</b> work like the gestures.</li><li><b>Surrender</b> shows up only if your table rules allow it.</li><li><b>Ask dealer</b> tells you the book play for your spot.</li><li>When the dealer shows an ace, you'll choose <b>Insurance</b> or <b>No insurance</b>. A <b>swipe</b> waves it off (the book never takes it).</li></ul>`},
     {i:'⏭️',h:'Between hands',b:`<ul><li>After the first hand, the next one deals itself after <b>5 seconds</b>. Touch anything to stop the countdown.</li><li>The left button opens a <b>Hand report</b>.</li><li>When the cut card comes out you get a banner. At the end of the deck, <b>See this deck's results</b> opens that deck's report, with the count revealed.</li></ul>`},
     {i:'🧭',h:'Top of the screen',b:`<ul><li><b>Bankroll</b> and <b>Hand</b> number.</li><li><b>↺ Start over</b> starts a fresh session. Tap it twice to confirm.</li><li><b>▦ Chart</b> is the strategy chart for your rules, plus your My Book tab.</li><li><b>📈 Sim</b> is the simulator.</li><li><b>?</b> brings back this screen.</li><li><b>Until shuffle</b> is how many cards are left before the cut card.</li></ul>`},
     {i:'⬇️',h:'Scroll down for more',b:`Below the table:<ul><li><b>You vs the Book</b>: bankrolls, who's ahead, average time per hand, and the full <b>Session report</b>.</li><li><b>Cards still in play</b>: every card you haven't seen yet this deck.</li><li><b>Settings &amp; hints</b>: show or hide your total and the dealer's, turn gestures on or off, and set your starting bankroll and the Book's bet.</li><li><b>Table rules</b>: decks, soft 17, payout, doubling, surrender, splits and penetration.</li></ul>Tap <b>Start playing</b> to deal your first hand.`}
@@ -1595,6 +1623,7 @@ let wTour=null,wIdx=0;
 function showWelcome(){
   cancelAuto();
   $('wStart').textContent=S&&S.hand>0?`Continue (hand ${S.hand})`:'Start';
+  const nb=$('wNew');nb.hidden=!(S&&S.hand>0);nb.classList.remove('confirm');nb.textContent='↺ Start a new session';
   $('wHome').hidden=false;$('wTour').hidden=true;$('welcome').hidden=false;
 }
 function hideWelcome(){$('welcome').hidden=true;setTimeout(fitTable,50);}
@@ -1609,6 +1638,13 @@ function paintTour(){
   $('wPage').scrollTop=0;
 }
 $('wStart').onclick=hideWelcome;
+let wNewT=null;
+$('wNew').onclick=()=>{
+  const nb=$('wNew');
+  if(!nb.classList.contains('confirm')){nb.classList.add('confirm');nb.textContent='Tap again: this clears your current session';clearTimeout(wNewT);
+    wNewT=setTimeout(()=>{nb.classList.remove('confirm');nb.textContent='↺ Start a new session';},3500);return;}
+  clearTimeout(wNewT);freshStart();hideWelcome();
+};
 $('wWhat').onclick=()=>openTour('what');$('wHow').onclick=()=>openTour('how');
 $('wBack2').onclick=()=>{$('wHome').hidden=false;$('wTour').hidden=true;};
 $('wSkip').onclick=hideWelcome;
