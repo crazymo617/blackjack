@@ -1,5 +1,5 @@
 // Keeps the trainer working offline. Bump VERSION whenever index.html changes.
-const VERSION = 'bj-v4';
+const VERSION = 'bj-v6';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {

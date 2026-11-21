@@ -1,6 +1,6 @@
 {
-  "name": "Blackjack Trainer",
-  "short_name": "Blackjack",
+  "name": "Real Blackjack",
+  "short_name": "Real BJ",
   "description": "Practice blackjack with real shuffles, basic strategy coaching and a simulator.",
   "start_url": "./",
   "scope": "./",

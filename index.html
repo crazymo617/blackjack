@@ -6,12 +6,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Blackjack">
+<meta name="apple-mobile-web-app-title" content="Real Blackjack">
 <meta name="theme-color" content="#141414">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Blackjack Trainer</title>
+<title>Real Blackjack</title>
 <link id="fontcss" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&display=swap">
 <style>
   :root{--gold:#e9c46a;--wood:#5a3519;--wood2:#3a210f;--ink:#15181b}
@@ -424,6 +424,41 @@
   .sheet-in:has(#sheetBody>.tabs) table.chart tr:first-child th{top:var(--tabsBottom,100px)}
   .sheet-in #sheetBody>.tabs{margin-top:0;box-shadow:0 -6px 0 #1b1f1c,0 6px 0 #1b1f1c}
   table.chart tr:first-child th{box-shadow:0 -3px 0 #1b1f1c,0 3px 0 #1b1f1c}
+  /* equal-size icon buttons in the top bar */
+  .topbtns{gap:4px!important}
+  .topbtns button{width:44px;height:40px;padding:2px 0!important;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9.5px!important;line-height:1.1;font-weight:700}
+  .topbtns button i{font-style:normal;font-size:15px;line-height:1.1}
+  #startOver.confirm{background:#b3271a!important}
+  #helpBtn{min-width:0}
+  .topbar .mid{display:flex;flex-direction:column;align-items:center}
+  /* welcome */
+  .w-newbig{background:#ffffff10!important;color:#f2e2b0!important}
+  .w-newbig.confirm{background:#b3271a!important;color:#fff!important}
+  #sheet{z-index:90}
+  /* session log */
+  .log-sum{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:#ffffff0d;border-radius:10px;padding:8px;margin-bottom:10px;text-align:center;font-weight:800;font-size:14px}
+  .log-sum small,.log-grid small{display:block;color:#999;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+  .log-card{background:#ffffff0a;border:1px solid #ffffff14;border-radius:12px;padding:10px;margin-bottom:8px}
+  .log-card.live{border-color:#e9c46a88;background:#e9c46a14}
+  .log-top{display:flex;justify-content:space-between;font-size:13px;color:#ddd;margin-bottom:6px}
+  .log-rules{color:#999;font-size:11px}
+  .log-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 8px;font-size:14px;font-weight:700}
+  .log-grid em,.log-sum em{font-style:normal;font-size:12px}
+  .log-book{grid-column:1/4}
+  #logReset.confirm{background:#b3271a!important;border-color:#b3271a!important}
+  .topbtns #startOver{display:flex;margin:0!important;padding:2px 0!important;font-size:9.5px!important}
+  .handlbl{white-space:nowrap;line-height:1.2}
+  .topbtns{margin-top:2px!important}
+  .vs-grid.four{grid-template-columns:repeat(4,1fr);gap:5px}
+  .vs-grid.four>div{padding:7px 3px;border:1px solid transparent}
+  .vs-grid.four small{font-size:9px;letter-spacing:.3px}
+  .vs-grid.four b{font-size:16px}
+  .vs-grid.four span{font-size:12px}
+  .vs-grid.four .me{background:#e9c46a1f}
+  .vs-grid.four>div.match{border-color:#e9c46a}
+  .log-sum{grid-template-columns:repeat(4,1fr)!important}
+  .log-sum.books{grid-template-columns:repeat(3,1fr)!important;margin-top:-4px}
+  .log-book{grid-column:auto!important}
   #app{padding-top:0}
   html,body{overscroll-behavior:none}
 </style>
@@ -433,12 +468,13 @@
   <div class="w-in">
     <div id="wHome">
       <div class="w-cards"><div class="w-card">A<small>♠</small></div><div class="w-card red">K<small>♥</small></div></div>
-      <h1>Blackjack Trainer</h1>
+      <h1>Real Blackjack</h1>
       <p class="w-tag">Real shuffles. Perfect-strategy coaching. A simulator that tells the truth.</p>
       <button id="wStart" class="w-big gold">Start</button>
       <button id="wWhat" class="w-big">What is this?</button>
       <button id="wHow" class="w-big">How to play</button>
-      <button id="wNew" class="w-new" hidden>↺ Start a new session</button>
+      <button id="wLog" class="w-big">📋 Session log</button>
+      <button id="wNew" class="w-big w-newbig" hidden>↺ Start a new session</button>
     </div>
     <div id="wTour" hidden>
       <div class="w-top"><button id="wBack2">‹ Menu</button><span id="wStep"></span><button id="wSkip">Skip</button></div>
@@ -452,7 +488,7 @@
 <div id="app">
   <div class="topbar">
     <div>Bankroll<b id="bank">$200</b></div>
-    <div class="mid">Hand <b id="handNo" class="inl">0</b><span class="topbtns"><button id="startOver">↺ Start over</button><button id="chartBtn">▦ Chart</button><button id="simBtn">📈 Sim</button><button id="helpBtn" aria-label="Help">?</button></span></div>
+    <div class="mid"><span class="handlbl">Hand <b id="handNo" class="inl">0</b></span><span class="topbtns"><button id="startOver"><i>↺</i>Restart</button><button id="chartBtn"><i>▦</i>Chart</button><button id="simBtn"><i>📈</i>Sim</button><button id="logBtn"><i>📋</i>Log</button><button id="helpBtn" aria-label="Help"><i>?</i>Help</button></span></div>
     <div style="text-align:right">Until shuffle<b id="untilShuf">—</b><span id="left" class="sub"></span></div>
   </div>
 
@@ -511,15 +547,18 @@
 
   <div class="vs">
     <div class="vs-title">You vs the Book<span id="vsSub"></span></div>
-    <div class="vs-grid">
-      <div><small>YOU</small><b id="vsMe"></b><span id="vsMeNet"></span></div>
-      <div><small>THE BOOK</small><b id="vsBook"></b><span id="vsBookNet"></span></div>
+    <div class="vs-grid four">
+      <div class="me"><small>YOU<br>&nbsp;</small><b id="vsMe"></b><span id="vsMeNet"></span></div>
+      <div id="vsT1"><small>BOOK<br>1 HAND</small><b id="vsB1"></b><span id="vsB1Net"></span></div>
+      <div id="vsT2"><small>BOOK<br>2 HANDS</small><b id="vsB2"></b><span id="vsB2Net"></span></div>
+      <div id="vsT3"><small>BOOK<br>3 HANDS</small><b id="vsB3"></b><span id="vsB3Net"></span></div>
     </div>
     <div id="vsDiff"></div>
     <button id="sessRep" class="sessbtn">Session report: what I did right &amp; wrong</button>
     <div class="small" id="vsCards"></div>
     <div class="small" id="vsLast"></div>
     <div class="small" id="vsTime"></div>
+    <div class="small" id="vsSpots"></div>
   </div>
 
   <details>
@@ -750,13 +789,21 @@ function dealerPlay(g){
   g.msg=!live?(g.hands.some(h=>h.result==='bust')?'You busted.':g.hands.some(h=>h.result==='surrender')?'You surrendered half your bet.':''):(dt>21?`Dealer busts with ${dt}.`:`Dealer stays on ${dt}.`);
 }
 // The Book: plays a whole round instantly, perfect basic strategy, never insurance.
+// bet: a flat amount for one middle spot, or [left, middle, right]. Returns how many spots it played, or false if broke.
 function autoPlayRound(g,bet){
-  const b=Math.min(bet,Math.floor(g.bank/MIN_BET)*MIN_BET);
-  if(b<MIN_BET)return false;
-  startRound(g,b);
+  let arr=Array.isArray(bet)?bet.slice():[0,bet,0];
+  for(const i of [0,1,2]){ // can't cover every spot: drop spots, leftmost first
+    if(arr.reduce((a,v)=>a+v,0)<=g.bank||arr.filter(v=>v>0).length<2)break;
+    if(arr[i]>0)arr[i]=0;
+  }
+  const i=arr.findIndex(v=>v>0);
+  if(i<0)return false;
+  if(arr[i]>g.bank)arr[i]=Math.floor(g.bank/MIN_BET)*MIN_BET; // last spot: bet what's left in $25s
+  if(arr[i]<MIN_BET)return false;
+  startRound(g,arr);
   if(g.phase==='ins')takeInsurance(g,false);
   while(g.phase==='play')applyAction(g,book(g,g.hands[g.cur]));
-  return true;
+  return arr.filter(v=>v>0).length;
 }
 function sameShoe(a,b){if(a.shoe.length!==b.shoe.length)return false;for(let i=0;i<a.shoe.length;i++)if(a.shoe[i].r!==b.shoe[i].r||a.shoe[i].s!==b.shoe[i].s)return false;return true;}
 function seenCards(g){
@@ -770,9 +817,12 @@ const $=id=>document.getElementById(id);
 const NAME={H:'Hit',S:'Stay',D:'Double',P:'Split',R:'Surrender'};
 const DENOMS=[{v:500,c:'#6a1b9a'},{v:100,c:'#151515'},{v:25,c:'#1e8e3e'},{v:5,c:'#c62828'},{v:1,c:'#eeeeee',t:'#222'},{v:0.5,c:'#f48fb1',t:'#222'}];
 const T={deal:480,hit:480,flip:700,draw:800}; // table-speed pacing (ms)
-let g,bk,BETS=[0,25,0],sel=1,round=0,prevCounts={},prevHide=true;
+let g,bk,bk2,bk3,BETS=[0,25,0],sel=1,round=0,prevCounts={},prevHide=true;
 const SPOTNAME=['Left','Middle','Right'];
 const totBet=()=>BETS.reduce((a,v)=>a+v,0);
+// three Books every round: always 1 hand, always 2 hands, always 3 hands
+const BOOK_SPOTS=[[0,1,0],[0,1,1],[1,1,1]];
+const books=()=>[bk,bk2,bk3];
 const betsOK=()=>!betError(g,BETS);
 let S={},LOG=[],asked=false,dealerSay='',shuffleNote='';
 let vis={d:0,hole:true,h:[]},busy=false,shownBank=0;
@@ -783,10 +833,11 @@ let cutOut=0, banner='', bannerClass='', bannerT=null; // cutOut: 0 none, 1 cut 
 
 function newSession(start,bookBet){
   const seed=Math.random()*4294967296>>>0;
-  g=createGame(start,seed); bk=createGame(start,seed); bk.follower=true;   // same seed = same shuffles for you and the Book
-  shuffleShoe(g,true); shuffleShoe(bk,true);
+  g=createGame(start,seed); bk=createGame(start,seed); bk2=createGame(start,seed); bk3=createGame(start,seed); // same seed = same shuffles for you and the Books
+  for(const B of books())B.follower=true;
+  shuffleShoe(g,true); for(const B of books())shuffleShoe(B,true);
   BETS=[0,bookBet,0];sel=1; round++; shownBank=start; vis={d:0,hole:true,h:[]};
-  S={results:{},bankBefore:0,start,bookBet,hand:0,firstDev:0,bookBroke:0,meBroke:0,times:[],dealT:0,bookLast:''};
+  S={startedAt:Date.now(),maxBank:start,handsTotal:0,bb:{1:0,2:0,3:0},lastSpots:1,results:{},bankBefore:0,start,bookBet,hand:0,firstDev:0,bookBroke:0,meBroke:0,times:[],dealT:0,bookLast:''};
   LOG=[];asked=false;dealerSay='';shuffleNote='';cancelAuto();
   if(typeof UNDO!=='undefined'){UNDO=[];undoUsed=false;animTok++;}
   g.msg='New decks washed and shuffled. Place your bet and deal.';
@@ -842,12 +893,12 @@ function record(sit,mine,bk_){
   asked=false; dealerSay=''; undoUsed=false;
 }
 let UNDO=[],undoUsed=false,animTok=0;
-function snap(){UNDO.push(JSON.stringify({g,bk,S,LOG,cutOut,shuffleNote,banner,bannerClass}));if(UNDO.length>40)UNDO.shift();}
+function snap(){UNDO.push(JSON.stringify({g,bk,bk2,bk3,S,LOG,cutOut,shuffleNote,banner,bannerClass}));if(UNDO.length>40)UNDO.shift();}
 function undo(){
   if(!UNDO.length)return;
   cancelAuto();animTok++;busy=false;clearTimeout(bannerT);
   const d=JSON.parse(UNDO.pop());
-  g=d.g;bk=d.bk;S=d.S;LOG=d.LOG;cutOut=d.cutOut;shuffleNote=d.shuffleNote;banner=d.banner;bannerClass=d.bannerClass;
+  g=d.g;bk=d.bk;bk2=d.bk2;bk3=d.bk3;S=d.S;LOG=d.LOG;cutOut=d.cutOut;shuffleNote=d.shuffleNote;banner=d.banner;bannerClass=d.bannerClass;
   vis={d:g.dealer.length,hole:g.phase==='play'||g.phase==='ins',h:g.hands.map(h=>h.cards.length)};
   prevHide=vis.hole;dealerSay='';asked=false;undoUsed=true;vsDrawn=false;shownBank=g.bank;
   g.msg='Undone. Make your play again.';
@@ -983,6 +1034,7 @@ function showBanner(html,cls,ms){
   render();
 }
 function animDone(){
+  if(g.phase==='over')S.maxBank=Math.max(S.maxBank||S.start,g.bank);
   if(g.phase==='over'&&S.hand&&!S.results[S.hand]){
     const net=g.bank-S.bankBefore, up=g.dealer[0]?(g.dealer[0].r==='A'?'A':cardVal(g.dealer[0])):'';
     const rs=g.hands.map(h=>h.result).join(', ');
@@ -1014,8 +1066,8 @@ function deal(){
   if(betsOK()&&g.shoe.length<=g.reshuffleAt){
     g.discard.push(...g.dealer,...g.hands.flatMap(h=>h.cards));g.dealer=[];g.hands=[];
     shuffleShoe(g,false);reshuffled=true;
-    bk.dealer=[];bk.hands=[];bk.discard=[];
-    bk.shoe=g.shoe.map(c=>({...c}));bk.burn=g.burn.map(c=>({...c}));bk.reshuffleAt=g.reshuffleAt;
+    for(const B of books()){B.dealer=[];B.hands=[];B.discard=[];
+      B.shoe=g.shoe.map(c=>({...c}));B.burn=g.burn.map(c=>({...c}));B.reshuffleAt=g.reshuffleAt;}
   }
   // count going into this hand = every card seen so far in this deck
   const seenPrev=reshuffled?[]:[...g.discard,...g.dealer,...g.hands.flatMap(h=>h.cards)];
@@ -1030,13 +1082,15 @@ function deal(){
   S.shoe=(S.shoe||1)+(g.shuffledThisRound?1:0);
   if(g.shuffledThisRound)S.lastShuf=S.hand; // hand timer starts when you press Deal
   shuffleNote=g.shuffledThisRound?'Cut card came out. Dealer reshuffled (riffle, riffle, strip, riffle, cut, burn). ':'';
-  if(!S.bookBroke){
-    const b0=bk.bank;
-    if(autoPlayRound(bk,S.bookBet))S.bookLast=summarize(bk,b0);
-    else{S.bookBroke=S.hand;S.bookLast='';}
+  {S.bb=S.bb||{1:S.bookBroke||0,2:0,3:0};const mine=BETS.filter(v=>v>0).length;S.lastSpots=mine;S.bookLast='';
+    books().forEach((B,k)=>{const n=k+1;if(S.bb[n])return;
+      const b0=B.bank,played=autoPlayRound(B,BOOK_SPOTS[k].map(v=>v*S.bookBet));
+      if(!played){S.bb[n]=S.hand;return;}
+      if(n===mine)S.bookLast=summarize(B,b0);});
+    S.bookBroke=S.bb[1];
   }
   shownBank=before-totBet(); vis={d:0,hole:true,h:g.hands.map(()=>0)};
-  if(g.hands.length>1)S.lastMulti=S.hand;
+  S.handsTotal=(S.handsTotal||0)+g.hands.length;
   if(g.shuffledThisRound){
     cutOut=0;busy=true;
     const steps=['Riffle','Riffle','Strip','Riffle','Cut','Burn one'],myRound=round;let i=0;
@@ -1071,21 +1125,28 @@ function renderVs(){
   if(busy||((g.phase==='play'||g.phase==='ins')&&vsDrawn))return; // no spoilers mid-hand
   vsDrawn=true;
   if(g.bank<MIN_BET&&!S.meBroke&&S.hand)S.meBroke=S.hand;
-  if(bk.bank<MIN_BET&&!S.bookBroke&&S.hand)S.bookBroke=S.hand;
-  $('vsSub').textContent=`Same decks, starting ${money(S.start)}, Book bets ${money(S.bookBet)} flat and plays perfectly · Hand ${S.hand}`;
+  S.bb=S.bb||{1:S.bookBroke||0,2:0,3:0};
+  books().forEach((B,k)=>{if(B.bank<MIN_BET&&!S.bb[k+1]&&S.hand)S.bb[k+1]=S.hand;});S.bookBroke=S.bb[1];
+  $('vsSub').textContent=`Same decks, starting ${money(S.start)}. Three Books play every round, perfectly, ${money(S.bookBet)} a hand: one plays 1 hand, one 2, one 3 · Hand ${S.hand}`;
+  $('vsSpots').textContent=S.hand?`The outlined Book plays as many hands as you did last round, so it sees your exact cards while you play by the book. A Book that can't cover all its hands plays as many as it can afford.`:'';
   $('vsMe').textContent=money(g.bank); $('vsMeNet').innerHTML=netHTML(g.bank);
-  $('vsBook').textContent=money(bk.bank); $('vsBookNet').innerHTML=netHTML(bk.bank);
+  books().forEach((B,k)=>{const n=k+1;$('vsB'+n).textContent=money(B.bank);$('vsB'+n+'Net').innerHTML=S.bb[n]?`<span class="down">broke · hand ${S.bb[n]}</span>`:netHTML(B.bank);
+    $('vsT'+n).classList.toggle('match',S.hand>0&&(S.lastSpots||1)===n);});
   let d;
-  if(S.meBroke&&S.bookBroke)d=`You went broke on hand ${S.meBroke}, the Book on hand ${S.bookBroke}. ${S.meBroke>S.bookBroke?'You lasted longer.':S.meBroke<S.bookBroke?'The Book lasted longer.':'Same hand.'}`;
-  else if(S.meBroke)d=`You went broke on hand ${S.meBroke}. The Book is still alive with ${money(bk.bank)}.`;
-  else if(S.bookBroke)d=`The Book went broke on hand ${S.bookBroke}. You're still going.`;
-  else{const diff=g.bank-bk.bank;d=!S.hand?'Deal to start.':diff>0?`You're ahead of the Book by ${money(diff)}.`:diff<0?`You're behind the Book by ${money(-diff)}.`:"You're even with the Book.";}
+  { // compare with the Book that plays the same number of hands you did last round
+    const n=S.lastSpots||1,B=books()[n-1],lbl=`the ${n}-hand Book`,bb=S.bb[n];
+    if(!S.hand)d='Deal to start.';
+    else if(S.meBroke&&bb)d=`You went broke on hand ${S.meBroke}, ${lbl} on hand ${bb}. ${S.meBroke>bb?'You lasted longer.':S.meBroke<bb?'The Book lasted longer.':'Same hand.'}`;
+    else if(S.meBroke)d=`You went broke on hand ${S.meBroke}. ${lbl[0].toUpperCase()+lbl.slice(1)} is still alive with ${money(B.bank)}.`;
+    else if(bb)d=`${lbl[0].toUpperCase()+lbl.slice(1)} went broke on hand ${bb}. You're still going.`;
+    else{const diff=g.bank-B.bank;d=diff>0?`You're ahead of ${lbl} by ${money(diff)}.`:diff<0?`You're behind ${lbl} by ${money(-diff)}.`:`You're even with ${lbl}.`;}
+  }
   $('vsDiff').textContent=d;
-  const lastDev=Math.max(S.lastDev||S.firstDev||0,S.lastMulti||0), why=(S.lastMulti||0)>(S.lastDev||S.firstDev||0)?'played more than one spot':'left the book';
+  const lastDev=S.lastDev||S.firstDev||0, why='left the book';
   $('vsCards').textContent=!S.hand?'':!lastDev?'No plays off the book yet, so you and the Book have seen the exact same cards.'
     :(S.lastShuf&&S.lastShuf>lastDev)?`Back in sync: since the shuffle on hand ${S.lastShuf}, you and the Book are getting the same cards.`
     :`You ${why} on hand ${lastDev}, so your cards and the Book's go different ways until the next shuffle. Then you both get the same new deck.`;
-  $('vsLast').textContent=S.bookLast?`Book's last hand: ${S.bookLast}`:'';
+  $('vsLast').textContent=S.bookLast?`${S.lastSpots||1}-hand Book's last round: ${S.bookLast}`:'';
   const n=S.times.length, avg=n?S.times.reduce((a,b)=>a+b,0)/n:0;
   $('vsTime').textContent=n?`Average time per hand: ${avg.toFixed(1)}s over ${n} hand${n>1?'s':''} you played (last: ${S.times[n-1].toFixed(1)}s)`:'';
 }
@@ -1273,7 +1334,7 @@ function chartHTML(){
   for(const v of PAIR_ROWS)pairs+=row('p',v,v===11?'A,A':`${v},${v}`);
   const n=myChanges();
   return`<h3>${mine?'My Book':'Strategy chart'}</h3><div class="tabs"><button data-cm="book" class="${mine?'':'on'}">The Book</button><button data-cm="mine" class="${mine?'on':''}">My Book${n?` (${n})`:''}</button></div>
-  ${mine?`<div class="small"><b>Tap any square to change it</b> (H → S → D → Ds, P on pairs${RULES.sur?', R/Rs surrender':''}). Squares you've changed get a red corner. The trainer still grades you against The Book. My Book is for the simulator.</div>
+  ${mine?`<div class="small"><b>Tap any square to change it</b> (H → S → D → Ds, P on pairs${RULES.sur?', R/Rs surrender':''}). Squares you've changed get a red corner. The app still grades you against The Book. My Book is for the simulator.</div>
   <label class="tog"><span>My Book takes insurance</span><input type="checkbox" id="myIns" ${MY.ins?'checked':''}><i></i></label>`
   :`<div class="small">${rulesText()}. Your hand down the side, dealer's up card across the top.${cur?' <b>Your current spot is outlined.</b>':''}</div>`}
   <div class="legend"><span class="cc-H">H</span>Hit <span class="cc-S">S</span>Stay <span class="cc-D">D</span>Double, else hit <span class="cc-Ds">Ds</span>Double, else stay <span class="cc-P">P</span>Split${RULES.sur?' <span class="cc-R">R</span>Surrender, else hit <span class="cc-Rs">Rs</span>Surrender, else stay <span class="cc-Rp">Rp</span>Surrender, else split':''}</div>
@@ -1405,14 +1466,14 @@ let saveT=null;
 function saveSession(){if(saveT)return;saveT=setTimeout(()=>{saveT=null;saveNow();},700);}
 function saveNow(){
   if(busy)return;
-  try{localStorage.setItem(SAVE_KEY,JSON.stringify({g,bk,S:{...S,dealT:0},LOG,BETS,cutOut,shuffleNote}));}catch(e){}
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify({g,bk,bk2,bk3,S:{...S,dealT:0},LOG,BETS,cutOut,shuffleNote}));}catch(e){}
 }
 function loadSession(){
   try{
     const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
     if(!d||!d.g||!d.bk||!d.S)return false;
     if([...d.g.shoe,...d.g.burn,...d.g.discard,...d.g.dealer,...d.g.hands.flatMap(h=>h.cards)].length!==TOTAL)return false; // rules changed
-    g=d.g;bk=d.bk;bk.follower=true;S=d.S;LOG=d.LOG||[];BETS=Array.isArray(d.BETS)?d.BETS:[0,d.bet??25,0];cutOut=d.cutOut||0;shuffleNote=d.shuffleNote||'';
+    g=d.g;bk=d.bk;bk2=d.bk2||JSON.parse(JSON.stringify(d.bk));bk3=d.bk3||JSON.parse(JSON.stringify(d.bk));for(const B of books())B.follower=true;S=d.S;LOG=d.LOG||[];BETS=Array.isArray(d.BETS)?d.BETS:[0,d.bet??25,0];cutOut=d.cutOut||0;shuffleNote=d.shuffleNote||'';
     round++;vis={d:g.dealer.length,hole:g.phase==='play'||g.phase==='ins',h:g.hands.map(h=>h.cards.length)};
     prevHide=vis.hole;banner='';
     if(g.phase==='play'||g.phase==='ins')S.dealT=performance.now();
@@ -1475,14 +1536,67 @@ let confirmT=null;
 $('startOver').onclick=()=>{
   const b=$('startOver');
   if(!b.classList.contains('confirm')){
-    b.classList.add('confirm');b.textContent='Tap again to confirm';
-    confirmT=setTimeout(()=>{b.classList.remove('confirm');b.textContent='↺ Start over';},3000);
+    b.classList.add('confirm');b.innerHTML='<i>↺</i>Sure?';
+    confirmT=setTimeout(()=>{b.classList.remove('confirm');b.innerHTML='<i>↺</i>Restart';},3000);
     return;
   }
-  clearTimeout(confirmT);b.classList.remove('confirm');b.textContent='↺ Start over';
+  clearTimeout(confirmT);b.classList.remove('confirm');b.innerHTML='<i>↺</i>Restart';
   freshStart();
 };
+// ---------- session log: one line per session, a new line each time you start over ----------
+const LOGKEY='bjSessionLog';
+function readLog(){try{return JSON.parse(localStorage.getItem(LOGKEY)||'[]');}catch(e){return[];}}
+function writeLog(a){try{localStorage.setItem(LOGKEY,JSON.stringify(a));}catch(e){}}
+function decksPlayed(){ // whole decks finished plus how far into the current one (of its playable part)
+  const done=(S.shoe||1)-1, dealt=TOTAL-g.shoe.length, playable=Math.max(1,TOTAL-g.reshuffleAt);
+  return cutOut===1?done+1:done+Math.min(0.99,Math.max(0,(dealt-1)/playable));
+}
+function sessionSummary(){
+  const right=LOG.filter(r=>r.mine===r.book||(r.mine==='Stand'&&r.book==='Stay')).length;
+  return{date:S.startedAt||Date.now(),end:Date.now(),start:S.start,rounds:S.hand,hands:S.handsTotal||S.hand,decks:+decksPlayed().toFixed(1),
+    decisions:LOG.length,right,max:Math.max(S.maxBank||S.start,g.bank,S.start),finish:g.bank,book:bk.bank,book2:bk2.bank,book3:bk3.bank,rules:`${RULES.decks}D ${RULES.h17?'H17':'S17'}${RULES.sur?' LS':''}`};
+}
+function logSession(){if(S&&S.hand>0){const a=readLog();a.push(sessionSummary());writeLog(a);}}
+function fmtDate(t){const d=new Date(t);return d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});}
+function logCard(e,live){
+  const net=e.finish-e.start,pct=e.decisions?Math.round(100*e.right/e.decisions):null;
+  const sg=v=>(v>0?'+':v<0?'−':'')+money(Math.abs(v));
+  return`<div class="log-card${live?' live':''}">
+    <div class="log-top"><span>${live?'<b>This session</b> · in progress':fmtDate(e.date)}</span><span class="log-rules">${e.rules||''}</span></div>
+    <div class="log-grid">
+      <div><small>Started</small>${money(e.start)}</div>
+      <div><small>Finished</small><span class="${net>0?'up':net<0?'down':''}">${money(e.finish)} <em>${sg(net)}</em></span></div>
+      <div><small>Max reached</small>${money(e.max)}</div>
+      <div><small>Hands</small>${e.rounds}${e.hands>e.rounds?` <em>(${e.hands} spots)</em>`:''}</div>
+      <div><small>Decks</small>${e.decks}</div>
+      <div><small>By the book</small>${pct===null?'—':pct+'%'}</div>
+      ${[['book',1],['book2',2],['book3',3]].filter(([k])=>e[k]!==undefined).map(([k,n])=>`<div><small>Book · ${n} hand${n>1?'s':''}</small>${money(e[k])} <em class="${e[k]-e.start>0?'up':e[k]-e.start<0?'down':''}">${sg(e[k]-e.start)}</em></div>`).join('')}
+    </div></div>`;
+}
+function logHTML(){
+  const past=readLog(),cur=S&&S.hand>0?sessionSummary():null,all=cur?[...past,cur]:past;
+  const tot=all.reduce((a,e)=>({rounds:a.rounds+e.rounds,dec:a.dec+e.decisions,right:a.right+e.right,net:a.net+(e.finish-e.start),b1:a.b1+(e.book-e.start),b2:a.b2+((e.book2??e.start)-e.start),b3:a.b3+((e.book3??e.start)-e.start)}),{rounds:0,dec:0,right:0,net:0,b1:0,b2:0,b3:0});
+  const sg=v=>(v>0?'+':v<0?'−':'')+money(Math.abs(v));
+  let h=`<h3>Session log</h3>`;
+  if(!all.length)return h+`<div class="small">No sessions yet. Play some hands and each session gets a line here. A new line starts every time you restart.</div>`;
+  h+=`<div class="log-sum"><div><small>Sessions</small>${all.length}</div><div><small>Hands</small>${tot.rounds}</div><div><small>By the book</small>${tot.dec?Math.round(100*tot.right/tot.dec)+'%':'—'}</div>
+     <div><small>You overall</small><span class="${tot.net>0?'up':tot.net<0?'down':''}">${sg(tot.net)}</span></div></div><div class="log-sum books">${[1,2,3].map(n=>{const v=tot['b'+n];return`<div><small>Book · ${n} hand${n>1?'s':''}</small><span class="${v>0?'up':v<0?'down':''}">${sg(v)}</span></div>`;}).join('')}</div>`;
+  if(cur)h+=logCard(cur,true);
+  h+=past.slice().reverse().map(e=>logCard(e,false)).join('');
+  if(past.length)h+=`<button id="logReset" class="sessbtn">Reset log</button>`;
+  h+=`<div class="small" style="margin-top:8px">A new line starts each time you restart (Restart, Start a new session, or new table rules). Reset log clears past sessions; your current session keeps going. The log is saved on this phone.</div>`;
+  return h;
+}
+function showLog(){cancelAuto();$('sheetBody').innerHTML=logHTML();$('sheet').hidden=false;$('sheet').querySelector('.sheet-in').scrollTop=0;}
+let logResetT=null;
+document.addEventListener('click',e=>{
+  const b=e.target.closest('#logReset');if(!b)return;
+  if(!b.classList.contains('confirm')){b.classList.add('confirm');b.textContent='Tap again to clear past sessions';clearTimeout(logResetT);
+    logResetT=setTimeout(()=>{b.classList.remove('confirm');b.textContent='Reset log';},3500);return;}
+  writeLog([]);showLog();
+});
 function freshStart(){
+  logSession();
   const v=Math.max(MIN_BET,Math.round((+$('startBank').value||200)/25)*25);
   const bb=Math.min(v,Math.max(MIN_BET,Math.round((+$('bookBetIn').value||25)/25)*25));
   busy=false;prevHide=true;$('sheet').hidden=true;clearSaved();
@@ -1580,7 +1694,7 @@ function commitRules(r,btn,label){
     rulesConfirmT=setTimeout(()=>{btn.classList.remove('confirm');btn.textContent=label;},3500);return;}
   clearTimeout(rulesConfirmT);btn.classList.remove('confirm');btn.textContent=label;
   applyRules(r);try{localStorage.setItem('bjRules',JSON.stringify(RULES));}catch(e){}
-  loadMyBook();clearSaved();cutOut=0;banner='';busy=false;prevHide=true;
+  logSession();loadMyBook();clearSaved();cutOut=0;banner='';busy=false;prevHide=true;
   newSession(S.start||200,S.bookBet||25);g.right=0;g.total=0;
   g.msg=`New rules: ${rulesText()}.`;rulesToForm();paintPrint();render();
 }
@@ -1603,9 +1717,9 @@ setTimeout(fitTable,0);setTimeout(fitTable,400);
 const TOURS={
   what:[
     {i:'🂠',h:'A real shuffle, a real deck',b:`Every shuffle sets the order of the whole deck once, then the cards come off the top in exactly that order, just like a hand-dealt game. If two 10♠ are gone, they're gone.<ul><li>The dealer shuffles the way a pitch dealer does: riffle, riffle, strip, riffle, cut, burn one card.</li><li>The cut card sits about 70% of the way in. When it comes out you get a warning, and the next hand starts with a fresh shuffle.</li><li>Split hands even get their cards in the real order.</li></ul>`},
-    {i:'📖',h:'You vs the Book',b:`Every time you deal, a perfect player called <b>the Book</b> plays the same hand on its own copy of the same deck, betting a flat amount.<ul><li>Play by the book and you see exactly the Book's cards.</li><li>Make a different play (or play more spots) and the cards go different ways, just like real life. At the next shuffle you both get the same new deck again.</li><li>The panel under the table shows who's ahead and who lasted longer.</li></ul>`},
-    {i:'🤫',h:'Coaching without spoilers',b:`The trainer never flashes right or wrong while you play. It quietly grades every decision against basic strategy.<ul><li>Stuck? Tap <b>Ask dealer</b> and the dealer tells you the book play.</li><li>After each hand and each deck you can open a report: mistakes first, with the actual cards, splits marked, and how each hand turned out.</li></ul>`},
-    {i:'🔢',h:'The count, revealed later',b:`The trainer tracks the Hi-Lo count going into every hand (2–6 count +1, 7–9 count 0, tens and aces −1), plus the true count per deck remaining.<ul><li>It stays hidden while you play the deck.</li><li>Once the deck is done, the report shows the count for every hand, so you can check your own counting.</li></ul>`},
+    {i:'📖',h:'You vs the Book',b:`Every time you deal, three perfect players called <b>the Books</b> play on their own copies of the same deck: one always plays 1 hand, one always 2, one always 3, betting a flat amount on each.<ul><li>Play by the book and the Book with the same number of hands as you gets exactly your cards.</li><li>Make a different play and the cards go different ways, just like real life. At the next shuffle you both get the same new deck again.</li><li>The panel under the table shows you and all three Books, who's ahead and who lasted longer.</li></ul>`},
+    {i:'🤫',h:'Coaching without spoilers',b:`Real Blackjack never flashes right or wrong while you play. It quietly grades every decision against basic strategy.<ul><li>Stuck? Tap <b>Ask dealer</b> and the dealer tells you the book play.</li><li>After each hand and each deck you can open a report: mistakes first, with the actual cards, splits marked, and how each hand turned out.</li></ul>`},
+    {i:'🔢',h:'The count, revealed later',b:`Real Blackjack tracks the Hi-Lo count going into every hand (2–6 count +1, 7–9 count 0, tens and aces −1), plus the true count per deck remaining.<ul><li>It stays hidden while you play the deck.</li><li>Once the deck is done, the report shows the count for every hand, so you can check your own counting.</li></ul>`},
     {i:'🧮',h:'Strategy computed, not copied',b:`The book isn't typed in from a card. It's calculated: for every hand against every dealer card it works out the expected value of hitting, staying, doubling, splitting and surrendering, with the cards already out of the deck taken into account and the dealer checking for blackjack.<ul><li>Change the table rules (decks, soft 17, doubling, surrender and more) and the right strategy changes with them.</li><li>It matches the published charts. Open <b>▦ Chart</b> to see it.</li></ul>`},
     {i:'📈',h:'Simulator and My Book',b:`<b>📈 Sim</b> plays thousands of sessions perfectly by the book with your bankroll, bet and number of spots, and shows how often you'd be ahead, doubled up or broke after 1 to 20 decks.<ul><li>In the chart, the <b>My Book</b> tab lets you change any play to what you like to do.</li><li>The simulator then runs your book against the real one on the exact same shuffles, so you see what your habits cost.</li></ul>`},
     {i:'⭐',h:'Built like a table',b:`<ul><li>Up to three spots, played right to left like a real table.</li><li>Undo for misclicks, with the report marking hands where you used it.</li><li>Your session saves automatically, even mid-hand.</li><li>Works offline once it's on your Home Screen.</li></ul>Ready? Tap <b>Start playing</b>.`}
@@ -1615,7 +1729,7 @@ const TOURS={
     {i:'👆',h:'Playing your hand',b:`Signal the dealer right on the felt (or on the dashed strip at the bottom):<div class="w-gest"><div><b>Tap</b>Hit</div><div><b>Double-tap</b>Double</div><div><b>Swipe</b>Stay</div><div><b>Spread 2 fingers</b>Split</div></div>Each one flashes a small label on the bottom strip so you know it registered. On your first two cards, a single tap waits a beat to see if a second tap is coming.`},
     {i:'🔘',h:'The buttons',b:`<ul><li><b>↶ Undo</b> takes back your last play, even after a stay. The card goes back on top, so the report marks it.</li><li><b>Double</b> and <b>Split</b> work like the gestures.</li><li><b>Surrender</b> shows up only if your table rules allow it.</li><li><b>Ask dealer</b> tells you the book play for your spot.</li><li>When the dealer shows an ace, you'll choose <b>Insurance</b> or <b>No insurance</b>. A <b>swipe</b> waves it off (the book never takes it).</li></ul>`},
     {i:'⏭️',h:'Between hands',b:`<ul><li>After the first hand, the next one deals itself after <b>5 seconds</b>. Touch anything to stop the countdown.</li><li>The left button opens a <b>Hand report</b>.</li><li>When the cut card comes out you get a banner. At the end of the deck, <b>See this deck's results</b> opens that deck's report, with the count revealed.</li></ul>`},
-    {i:'🧭',h:'Top of the screen',b:`<ul><li><b>Bankroll</b> and <b>Hand</b> number.</li><li><b>↺ Start over</b> starts a fresh session. Tap it twice to confirm.</li><li><b>▦ Chart</b> is the strategy chart for your rules, plus your My Book tab.</li><li><b>📈 Sim</b> is the simulator.</li><li><b>?</b> brings back this screen.</li><li><b>Until shuffle</b> is how many cards are left before the cut card.</li></ul>`},
+    {i:'🧭',h:'Top of the screen',b:`<ul><li><b>Bankroll</b> and <b>Hand</b> number.</li><li><b>↺ Restart</b> starts a fresh session (tap twice to confirm). It also starts a new line in your session log.</li><li><b>▦ Chart</b> is the strategy chart for your rules, plus your My Book tab.</li><li><b>📈 Sim</b> is the simulator.</li><li><b>📋 Log</b> is your session log: starting bankroll, hands, decks, % by the book, high point and finish for every session, next to how the Book did.</li><li><b>?</b> brings back this screen.</li><li><b>Until shuffle</b> is how many cards are left before the cut card.</li></ul>`},
     {i:'⬇️',h:'Scroll down for more',b:`Below the table:<ul><li><b>You vs the Book</b>: bankrolls, who's ahead, average time per hand, and the full <b>Session report</b>.</li><li><b>Cards still in play</b>: every card you haven't seen yet this deck.</li><li><b>Settings &amp; hints</b>: show or hide your total and the dealer's, turn gestures on or off, and set your starting bankroll and the Book's bet.</li><li><b>Table rules</b>: decks, soft 17, payout, doubling, surrender, splits and penetration.</li></ul>Tap <b>Start playing</b> to deal your first hand.`}
   ]
 };
@@ -1651,6 +1765,8 @@ $('wSkip').onclick=hideWelcome;
 $('wPrev').onclick=()=>{if(wIdx>0){wIdx--;paintTour();}};
 $('wNext').onclick=()=>{if(wIdx<TOURS[wTour].length-1){wIdx++;paintTour();}else hideWelcome();};
 $('helpBtn').onclick=showWelcome;
+$('logBtn').onclick=showLog;
+$('wLog').onclick=showLog;
 // swipe between tour pages
 (()=>{let x0=null;const el=$('wTour');
   el.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;},{passive:true});
