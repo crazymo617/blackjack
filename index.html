@@ -459,6 +459,9 @@
   .log-sum{grid-template-columns:repeat(4,1fr)!important}
   .log-sum.books{grid-template-columns:repeat(3,1fr)!important;margin-top:-4px}
   .log-book{grid-column:auto!important}
+  #walkBtn{display:block;margin:8px auto 0;background:transparent;color:#1b1f1c;border:1.5px solid #1b1f1c;border-radius:10px;padding:9px 14px;font-size:15px;font-family:-apple-system,system-ui,sans-serif;font-weight:800}
+  #walkBtn.confirm{background:#9b2226;color:#fff;border-color:#9b2226}
+  .log-top .walked{color:#e9c46a;font-weight:700}
   #app{padding-top:0}
   html,body{overscroll-behavior:none}
 </style>
@@ -997,7 +1000,7 @@ function showReport(which,keepAll){
   const shoeOfHand=hn=>(S.results[hn]||{}).shoe||(LOG.find(r=>r.hand===hn)||{}).shoe||1;
   const all=which==='hand'?fin.filter(hn=>hn===S.hand):which==='deck'?fin.filter(hn=>shoeOfHand(hn)===sh):fin;
   $('sheetBody').innerHTML=reportHTML(rows,title,all)+(which==='deck'?`<button class="sessbtn" id="fullFromDeck">See the full session report</button>`:'');
-  $('sheet').hidden=false;
+  $('sheet').hidden=false;if(!keepAll)$('sheet').querySelector('.sheet-in').scrollTop=0;
 }
 
 // ---------- Hi-Lo count (tracked silently, shown only after a deck is finished) ----------
@@ -1046,7 +1049,7 @@ function animDone(){
     S.deckEnd=S.deckEnd||{};
     S.deckEnd[S.shoe||1]=hilo([...g.discard,...g.dealer,...g.hands.flatMap(h=>h.cards)]);
     const n=LOG.filter(r=>(r.shoe||1)===(S.shoe||1)).length;
-    showBanner(`New deck coming<small>The dealer shuffles before the next hand.</small>${n?`<button id="deckRepBtn">See this deck's results</button>`:''}`,'',0);
+    showBanner(`New deck coming<small>The dealer shuffles before the next hand.</small>${n?`<button id="deckRepBtn">See this deck's results</button>`:''}<button id="walkBtn">Walk away with ${money(g.bank)}</button>`,'',0);
   }
 }
 function startAuto(){
@@ -1347,7 +1350,7 @@ function chartHTML(){
 function showChart(){
   cancelAuto();
   if(g.phase==='play'&&!busy)asked=true; // peeking mid-hand counts as asking the dealer
-  $('sheetBody').innerHTML=chartHTML();$('sheet').hidden=false;
+  $('sheetBody').innerHTML=chartHTML();$('sheet').hidden=false;$('sheet').querySelector('.sheet-in').scrollTop=0;
 }
 function rerenderChart(){const y=$('sheet').querySelector('.sheet-in').scrollTop;$('sheetBody').innerHTML=chartHTML();$('sheet').querySelector('.sheet-in').scrollTop=y;}
 function cycleCell(k){
@@ -1504,6 +1507,7 @@ document.addEventListener('click',e=>{
   if(e.target.closest('#mySim')){showSim();return;}
   if(e.target.closest('#simRun'))runSim();
   else if(e.target.closest('#deckRepBtn'))showReport('deck');
+  else if(e.target.closest('#walkBtn'))walkAway(e.target.closest('#walkBtn'));
   else if(e.target.closest('#fullFromDeck'))showReport('session');
 });
 $('undo1').onclick=undo;$('undo2').onclick=undo;
@@ -1554,7 +1558,7 @@ function decksPlayed(){ // whole decks finished plus how far into the current on
 function sessionSummary(){
   const right=LOG.filter(r=>r.mine===r.book||(r.mine==='Stand'&&r.book==='Stay')).length;
   return{date:S.startedAt||Date.now(),end:Date.now(),start:S.start,rounds:S.hand,hands:S.handsTotal||S.hand,decks:+decksPlayed().toFixed(1),
-    decisions:LOG.length,right,max:Math.max(S.maxBank||S.start,g.bank,S.start),finish:g.bank,book:bk.bank,book2:bk2.bank,book3:bk3.bank,rules:`${RULES.decks}D ${RULES.h17?'H17':'S17'}${RULES.sur?' LS':''}`};
+    decisions:LOG.length,right,max:Math.max(S.maxBank||S.start,g.bank,S.start),finish:g.bank,book:bk.bank,book2:bk2.bank,book3:bk3.bank,walked:!!S.walked,rules:`${RULES.decks}D ${RULES.h17?'H17':'S17'}${RULES.sur?' LS':''}`};
 }
 function logSession(){if(S&&S.hand>0){const a=readLog();a.push(sessionSummary());writeLog(a);}}
 function fmtDate(t){const d=new Date(t);return d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});}
@@ -1562,7 +1566,7 @@ function logCard(e,live){
   const net=e.finish-e.start,pct=e.decisions?Math.round(100*e.right/e.decisions):null;
   const sg=v=>(v>0?'+':v<0?'−':'')+money(Math.abs(v));
   return`<div class="log-card${live?' live':''}">
-    <div class="log-top"><span>${live?'<b>This session</b> · in progress':fmtDate(e.date)}</span><span class="log-rules">${e.rules||''}</span></div>
+    <div class="log-top"><span>${live?'<b>This session</b> · in progress':fmtDate(e.date)+(e.walked?' · <b class="walked">walked away</b>':'')}</span><span class="log-rules">${e.rules||''}</span></div>
     <div class="log-grid">
       <div><small>Started</small>${money(e.start)}</div>
       <div><small>Finished</small><span class="${net>0?'up':net<0?'down':''}">${money(e.finish)} <em>${sg(net)}</em></span></div>
@@ -1584,7 +1588,7 @@ function logHTML(){
   if(cur)h+=logCard(cur,true);
   h+=past.slice().reverse().map(e=>logCard(e,false)).join('');
   if(past.length)h+=`<button id="logReset" class="sessbtn">Reset log</button>`;
-  h+=`<div class="small" style="margin-top:8px">A new line starts each time you restart (Restart, Start a new session, or new table rules). Reset log clears past sessions; your current session keeps going. The log is saved on this phone.</div>`;
+  h+=`<div class="small" style="margin-top:8px">A new line starts each time you restart (Restart, Start a new session, Walk away at the end of a deck, or new table rules). Reset log clears past sessions; your current session keeps going. The log is saved on this phone.</div>`;
   return h;
 }
 function showLog(){cancelAuto();$('sheetBody').innerHTML=logHTML();$('sheet').hidden=false;$('sheet').querySelector('.sheet-in').scrollTop=0;}
@@ -1595,6 +1599,17 @@ document.addEventListener('click',e=>{
     logResetT=setTimeout(()=>{b.classList.remove('confirm');b.textContent='Reset log';},3500);return;}
   writeLog([]);showLog();
 });
+// Walk away at the end of a deck: log this session as finished, then sit down fresh on a new deck
+let walkT=0;
+function walkAway(b){
+  cancelAuto();
+  if(!b.classList.contains('confirm')){b.classList.add('confirm');b.textContent='Tap again to leave';
+    clearTimeout(walkT);walkT=setTimeout(()=>{if(b.isConnected){b.classList.remove('confirm');b.textContent=`Walk away with ${money(g.bank)}`;}},3500);return;}
+  const left=g.bank,start=S.start;S.walked=true;
+  freshStart();
+  g.msg=`You walked away with ${money(left)} (${left>=start?'up':'down'} ${money(Math.abs(left-start))}). It's in the log. New session: ${money(g.bank)} on a fresh deck.`;
+  render();
+}
 function freshStart(){
   logSession();
   const v=Math.max(MIN_BET,Math.round((+$('startBank').value||200)/25)*25);
@@ -1728,7 +1743,7 @@ const TOURS={
     {i:'🪙',h:'Placing bets',b:`<ul><li><b>Tap an empty circle</b> to put down $25 (the table minimum). <b>Tap again</b> to add $5.</li><li><b>Swipe left</b> on a circle to take its chips back.</li><li>There are three circles, left, middle and right, so you can play up to three hands.</li><li>The <b>25</b> and <b>100</b> chips at the bottom add to the circle you touched last. <b>Clear</b> removes everything.</li><li>Tap <b>DEAL</b>, or just tap the felt.</li></ul>`},
     {i:'👆',h:'Playing your hand',b:`Signal the dealer right on the felt (or on the dashed strip at the bottom):<div class="w-gest"><div><b>Tap</b>Hit</div><div><b>Double-tap</b>Double</div><div><b>Swipe</b>Stay</div><div><b>Spread 2 fingers</b>Split</div></div>Each one flashes a small label on the bottom strip so you know it registered. On your first two cards, a single tap waits a beat to see if a second tap is coming.`},
     {i:'🔘',h:'The buttons',b:`<ul><li><b>↶ Undo</b> takes back your last play, even after a stay. The card goes back on top, so the report marks it.</li><li><b>Double</b> and <b>Split</b> work like the gestures.</li><li><b>Surrender</b> shows up only if your table rules allow it.</li><li><b>Ask dealer</b> tells you the book play for your spot.</li><li>When the dealer shows an ace, you'll choose <b>Insurance</b> or <b>No insurance</b>. A <b>swipe</b> waves it off (the book never takes it).</li></ul>`},
-    {i:'⏭️',h:'Between hands',b:`<ul><li>After the first hand, the next one deals itself after <b>5 seconds</b>. Touch anything to stop the countdown.</li><li>The left button opens a <b>Hand report</b>.</li><li>When the cut card comes out you get a banner. At the end of the deck, <b>See this deck's results</b> opens that deck's report, with the count revealed.</li></ul>`},
+    {i:'⏭️',h:'Between hands',b:`<ul><li>After the first hand, the next one deals itself after <b>5 seconds</b>. Touch anything to stop the countdown.</li><li>The left button opens a <b>Hand report</b>.</li><li>When the cut card comes out you get a banner. At the end of the deck, <b>See this deck's results</b> opens that deck's report, with the count revealed.</li><li><b>Walk away</b> on that banner cashes you out like leaving the table: the session goes in the log and you sit down fresh on a new deck.</li></ul>`},
     {i:'🧭',h:'Top of the screen',b:`<ul><li><b>Bankroll</b> and <b>Hand</b> number.</li><li><b>↺ Restart</b> starts a fresh session (tap twice to confirm). It also starts a new line in your session log.</li><li><b>▦ Chart</b> is the strategy chart for your rules, plus your My Book tab.</li><li><b>📈 Sim</b> is the simulator.</li><li><b>📋 Log</b> is your session log: starting bankroll, hands, decks, % by the book, high point and finish for every session, next to how the Book did.</li><li><b>?</b> brings back this screen.</li><li><b>Until shuffle</b> is how many cards are left before the cut card.</li></ul>`},
     {i:'⬇️',h:'Scroll down for more',b:`Below the table:<ul><li><b>You vs the Book</b>: bankrolls, who's ahead, average time per hand, and the full <b>Session report</b>.</li><li><b>Cards still in play</b>: every card you haven't seen yet this deck.</li><li><b>Settings &amp; hints</b>: show or hide your total and the dealer's, turn gestures on or off, and set your starting bankroll and the Book's bet.</li><li><b>Table rules</b>: decks, soft 17, payout, doubling, surrender, splits and penetration.</li></ul>Tap <b>Start playing</b> to deal your first hand.`}
   ]
